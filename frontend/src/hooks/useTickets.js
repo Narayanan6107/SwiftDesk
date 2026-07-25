@@ -72,8 +72,13 @@ export function useTickets({ autoFetch = true, filters = {} } = {}) {
     dispatch({ type: 'SUBMIT_START' });
     try {
       const res = await api.createTicket(data);
-      dispatch({ type: 'SUBMIT_SUCCESS', ticket: res.data });
-      return res.data;
+      
+      // The backend returns a custom contract { ticket_id: "..." } without a nested "data" object.
+      // Fetch the full ticket to satisfy frontend UI requirements.
+      const fullTicketRes = await api.getTicketById(res.ticket_id);
+      const fullTicket = fullTicketRes.data;
+      dispatch({ type: 'SUBMIT_SUCCESS', ticket: fullTicket });
+      return fullTicket;
     } catch (err) {
       dispatch({ type: 'SET_ERROR', error: err.message });
       throw err;

@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const bcrypt = require('bcrypt');
 
 const CustomerSchema = new mongoose.Schema(
   {
@@ -21,6 +22,11 @@ const CustomerSchema = new mongoose.Schema(
       lowercase: true,
       match: [/^\S+@\S+\.\S+$/, 'Please enter a valid email address'],
     },
+    password: {
+      type: String,
+      required: true,
+      select: false,
+    },
     totalTickets: {
       type: Number,
       default: 0,
@@ -41,8 +47,12 @@ const CustomerSchema = new mongoose.Schema(
   }
 );
 
-// Indexes
-CustomerSchema.index({ customer_id: 1 });
-CustomerSchema.index({ email: 1 });
+// (Indexes for unique fields removed since they are declared on the field level)
+
+CustomerSchema.pre('save', async function () {
+  if (!this.isModified('password')) return;
+  const salt = await bcrypt.genSalt(10);
+  this.password = await bcrypt.hash(this.password, salt);
+});
 
 module.exports = mongoose.model('Customer', CustomerSchema);

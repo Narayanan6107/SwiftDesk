@@ -39,7 +39,7 @@ const SupportAgentSchema = new mongoose.Schema(
     },
     max_capacity: {
       type: Number,
-      default: 5,
+      required: true,
       min: 1,
     },
     skills: {
@@ -64,9 +64,7 @@ const SupportAgentSchema = new mongoose.Schema(
   }
 );
 
-// Indexes
-SupportAgentSchema.index({ agent_id: 1 });
-SupportAgentSchema.index({ email: 1 });
+// Indexes (removed agent_id and email since they are unique at field level)
 SupportAgentSchema.index({ status: 1 });
 
 module.exports = mongoose.model('SupportAgent', SupportAgentSchema);

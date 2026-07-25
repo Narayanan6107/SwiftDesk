@@ -9,9 +9,19 @@ const BASE_URL = '/api';
  * Generic fetch wrapper with consistent error handling.
  */
 async function request(path, options = {}) {
+  const token = localStorage.getItem('jwt_token');
+  const headers = {
+    'Content-Type': 'application/json',
+    ...options.headers,
+  };
+  
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
   const res = await fetch(`${BASE_URL}${path}`, {
-    headers: { 'Content-Type': 'application/json', ...options.headers },
     ...options,
+    headers,
   });
 
   const json = await res.json().catch(() => ({}));
@@ -24,6 +34,22 @@ async function request(path, options = {}) {
   }
 
   return json;
+}
+
+// ── Auth API ─────────────────────────────────────────────────────────────────
+
+export async function login(email, password) {
+  return request('/auth/login', {
+    method: 'POST',
+    body: JSON.stringify({ email, password }),
+  });
+}
+
+export async function register(full_name, email, password) {
+  return request('/auth/register', {
+    method: 'POST',
+    body: JSON.stringify({ full_name, email, password }),
+  });
 }
 
 // ── Ticket API ───────────────────────────────────────────────────────────────
@@ -83,6 +109,23 @@ export async function addActivity(id, activity) {
 }
 
 /**
+ * Add an internal note/comment to the ticket.
+ */
+export async function addNote(id, body, author) {
+  return request(`/tickets/${id}/notes`, {
+    method: 'POST',
+    body: JSON.stringify({ body, author }),
+  });
+}
+
+/**
+ * Fetch the audit log trail for a ticket.
+ */
+export async function getTicketAudit(id) {
+  return request(`/tickets/${id}/audit`);
+}
+
+/**
  * Close (soft-delete) a ticket.
  */
 export async function closeTicket(id) {
@@ -94,4 +137,31 @@ export async function closeTicket(id) {
  */
 export async function healthCheck() {
   return request('/health');
+}
+
+// ── Admin API ────────────────────────────────────────────────────────────────
+
+export async function getEngineers() {
+  return request('/admin/engineers');
+}
+
+export async function reassignTicket(ticketId, agentId) {
+  return request(`/admin/tickets/${ticketId}/reassign`, {
+    method: 'PATCH',
+    body: JSON.stringify({ agentId }),
+  });
+}
+
+export async function getAnalytics() {
+  return request('/admin/analytics');
+}
+
+export async function getDailySummaryReport() {
+  return request('/admin/daily-summary/report');
+}
+
+export async function triggerDailySummaryEmail() {
+  return request('/admin/daily-summary/trigger', {
+    method: 'POST',
+  });
 }

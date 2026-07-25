@@ -33,8 +33,11 @@ const NAV_ITEMS = [
   },
 ];
 
+import { useAuth } from '../../context/AuthContext';
+
 export default function CustomerLayout({ children, currentPage, onNavigate }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const { user, logout } = useAuth();
 
   return (
     <div className="flex h-screen bg-slate-50 overflow-hidden">
@@ -101,17 +104,26 @@ export default function CustomerLayout({ children, currentPage, onNavigate }) {
         </nav>
 
         {/* User profile */}
-        <div className="px-3 py-4 border-t border-slate-800">
+        <div className="px-3 py-4 border-t border-slate-800 flex flex-col gap-3">
           <div className="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-slate-800/60">
             <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-400 to-violet-500
               flex items-center justify-center text-white text-sm font-bold shrink-0">
-              C
+              {user?.name ? user.name.charAt(0).toUpperCase() : 'C'}
             </div>
             <div className="min-w-0">
-              <p className="text-slate-200 text-sm font-medium truncate">Customer</p>
-              <p className="text-slate-500 text-xs truncate">Portal User</p>
+              <p className="text-slate-200 text-sm font-medium truncate">{user?.name || 'Customer'}</p>
+              <p className="text-slate-500 text-xs truncate">{user?.email || 'Portal User'}</p>
             </div>
           </div>
+          <button
+            onClick={logout}
+            className="w-full flex items-center justify-center gap-2 px-3 py-2 border border-slate-700 text-slate-400 hover:text-white hover:border-slate-500 rounded-lg text-xs font-semibold transition-all duration-200"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+            </svg>
+            Logout
+          </button>
         </div>
       </aside>
 

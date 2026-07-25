@@ -1,0 +1,317 @@
+[
+  {
+    "external_ref": "web-8f3a2c",
+    "customer": {
+      "customer_id": "CUST-2041",
+      "name": "Anita Sharma",
+      "email": "anita.sharma@example.com"
+    },
+    "subject": "Charged twice for one order",
+    "description": "My payment was deducted twice for order #4471 but only one order was placed. Please refund the extra amount urgently.",
+    "category": "Billing",
+    "priority": "High",
+    "channel": "web_app",
+    "created_at": "2026-07-20T09:14:33+05:30",
+    "metadata": { "app_version": "3.4.1", "platform": "Android 13" }
+  },
+  {
+    "external_ref": "web-9a1b2c",
+    "customer": {
+      "customer_id": "CUST-2042",
+      "name": "Rajesh Patel",
+      "email": "rajesh.patel@example.com"
+    },
+    "subject": "Unable to reset password",
+    "description": "The password reset link is throwing a 404 page error whenever I click it from my email.",
+    "category": "Account",
+    "priority": "High",
+    "channel": "web_app",
+    "created_at": "2026-07-21T10:15:00+05:30",
+    "metadata": { "app_version": "3.4.1", "platform": "Windows 11" }
+  },
+  {
+    "external_ref": "email-3c4d5e",
+    "customer": {
+      "customer_id": "CUST-2043",
+      "name": "Vikram Malhotra",
+      "email": "vikram.m@example.com"
+    },
+    "subject": "Inquiry about enterprise pricing packages",
+    "description": "I would like to get a quote for a team of 50 users and understand the onboarding process.",
+    "category": "Other",
+    "priority": "Low",
+    "channel": "email",
+    "created_at": "2026-07-21T11:30:22+05:30",
+    "metadata": { "app_version": null, "platform": null }
+  },
+  {
+    "external_ref": "web-5f6g7h",
+    "customer": {
+      "customer_id": "CUST-2044",
+      "name": "Priya Sen",
+      "email": "priya.sen@example.com"
+    },
+    "subject": "Payment gateway timeout on checkout",
+    "description": "During checkout, the gateway timed out and I don't know if my order was processed successfully.",
+    "category": "Billing",
+    "priority": "Critical",
+    "channel": "web_app",
+    "created_at": "2026-07-21T14:45:10+05:30",
+    "metadata": { "app_version": "3.4.2", "platform": "macOS 14" }
+  },
+  {
+    "external_ref": "web-7h8i9j",
+    "customer": {
+      "customer_id": "CUST-2045",
+      "name": "Amit Shah",
+      "email": "amit.shah@example.com"
+    },
+    "subject": "Missing items in delivery package",
+    "description": "Received order #89211 but only 2 out of the 3 ordered items were inside the package.",
+    "category": "Delivery",
+    "priority": "High",
+    "channel": "web_app",
+    "created_at": "2026-07-22T09:20:15+05:30",
+    "metadata": { "app_version": "3.4.1", "platform": "iOS 17" }
+  },
+  {
+    "external_ref": "email-1a2b3c",
+    "customer": {
+      "customer_id": "CUST-2046",
+      "name": "Sunita Rao",
+      "email": "sunita.rao@example.com"
+    },
+    "subject": "Refund status update request",
+    "description": "I initiated a return for order #7712 ten days ago but haven't received the refund amount yet.",
+    "category": "Billing",
+    "priority": "Medium",
+    "channel": "email",
+    "created_at": "2026-07-22T10:40:00+05:30",
+    "metadata": { "app_version": null, "platform": null }
+  },
+  {
+    "external_ref": "web-4d5e6f",
+    "customer": {
+      "customer_id": "CUST-2047",
+      "name": "Rohan Das",
+      "email": "rohan.das@example.com"
+    },
+    "subject": "Dashboard loading very slowly",
+    "description": "The main dashboard takes more than 15 seconds to fetch and render my projects page.",
+    "category": "Technical",
+    "priority": "Medium",
+    "channel": "web_app",
+    "created_at": "2026-07-22T13:12:45+05:30",
+    "metadata": { "app_version": "3.4.2", "platform": "Ubuntu 22.04" }
+  },
+  {
+    "external_ref": "chat-9c8b7a",
+    "customer": {
+      "customer_id": "CUST-2048",
+      "name": "Kavita Krishnan",
+      "email": "kavita.k@example.com"
+    },
+    "subject": "Account security lock alert",
+    "description": "I received an alert saying my account was locked due to suspicious login attempts. Please unlock.",
+    "category": "Account",
+    "priority": "High",
+    "channel": "chat",
+    "created_at": "2026-07-22T16:05:30+05:30",
+    "metadata": { "app_version": "3.4.0", "platform": "Android 12" }
+  },
+  {
+    "external_ref": "phone-2d3e4f",
+    "customer": {
+      "customer_id": "CUST-2049",
+      "name": "Sanjay Dutt",
+      "email": "sanjay.dutt@example.com"
+    },
+    "subject": "Delivery address modification request",
+    "description": "Need to update my shipping address to flat 402, Block B before the shipment leaves the warehouse.",
+    "category": "Delivery",
+    "priority": "Medium",
+    "channel": "phone",
+    "created_at": "2026-07-23T10:00:00+05:30",
+    "metadata": { "app_version": null, "platform": null }
+  },
+  {
+    "external_ref": "web-3a4b5c",
+    "customer": {
+      "customer_id": "CUST-2050",
+      "name": "Deepa Nair",
+      "email": "deepa.nair@example.com"
+    },
+    "subject": "API token generation failure",
+    "description": "I click on 'Generate API Key' but the page freezes and throws a console error in the browser.",
+    "category": "Technical",
+    "priority": "High",
+    "channel": "web_app",
+    "created_at": "2026-07-23T11:15:22+05:30",
+    "metadata": { "app_version": "3.4.2", "platform": "macOS 13" }
+  },
+  {
+    "external_ref": "email-8c9d0e",
+    "customer": {
+      "customer_id": "CUST-2051",
+      "name": "Harish Verma",
+      "email": "harish.v@example.com"
+    },
+    "subject": "Duplicate invoice charge",
+    "description": "I got billed for two active subscriptions on invoice #INV-9021 instead of only one active plan.",
+    "category": "Billing",
+    "priority": "High",
+    "channel": "email",
+    "created_at": "2026-07-23T14:30:40+05:30",
+    "metadata": { "app_version": null, "platform": null }
+  },
+  {
+    "external_ref": "web-1f2g3h",
+    "customer": {
+      "customer_id": "CUST-2052",
+      "name": "Nisha Gupta",
+      "email": "nisha.g@example.com"
+    },
+    "subject": "Cannot upload PDF attachments",
+    "description": "Trying to attach a 2MB PDF invoice to my support request but it keeps failing without error message.",
+    "category": "Technical",
+    "priority": "Low",
+    "channel": "web_app",
+    "created_at": "2026-07-23T16:22:15+05:30",
+    "metadata": { "app_version": "3.4.2", "platform": "Windows 10" }
+  },
+  {
+    "external_ref": "chat-7h8i9j",
+    "customer": {
+      "customer_id": "CUST-2053",
+      "name": "Karan Johar",
+      "email": "karan.j@example.com"
+    },
+    "subject": "Incorrect currency showing on catalog",
+    "description": "The catalog is displaying prices in USD instead of INR despite setting my location preference.",
+    "category": "Other",
+    "priority": "Low",
+    "channel": "chat",
+    "created_at": "2026-07-24T09:10:00+05:30",
+    "metadata": { "app_version": "3.4.1", "platform": "iOS 16" }
+  },
+  {
+    "external_ref": "web-5a6b7c",
+    "customer": {
+      "customer_id": "CUST-2054",
+      "name": "Meera Joshi",
+      "email": "meera.j@example.com"
+    },
+    "subject": "GDPR data deletion request",
+    "description": "Please purge all my customer data and past support ticket history from your active servers.",
+    "category": "Account",
+    "priority": "Medium",
+    "channel": "web_app",
+    "created_at": "2026-07-24T10:45:30+05:30",
+    "metadata": { "app_version": "3.4.2", "platform": "Windows 11" }
+  },
+  {
+    "external_ref": "email-4c5d6e",
+    "customer": {
+      "customer_id": "CUST-2055",
+      "name": "Arjun Kapoor",
+      "email": "arjun.k@example.com"
+    },
+    "subject": "Delivery courier details missing",
+    "description": "Order marked as shipped but there is no tracking number or courier partner name in the email.",
+    "category": "Delivery",
+    "priority": "Low",
+    "channel": "email",
+    "created_at": "2026-07-24T12:00:12+05:30",
+    "metadata": { "app_version": null, "platform": null }
+  },
+  {
+    "external_ref": "web-9e0f1a",
+    "customer": {
+      "customer_id": "CUST-2056",
+      "name": "Siddharth Malhotra",
+      "email": "sid.m@example.com"
+    },
+    "subject": "Unable to verify email address",
+    "description": "The verification code link has expired prematurely when I opened it after 5 minutes.",
+    "category": "Account",
+    "priority": "High",
+    "channel": "web_app",
+    "created_at": "2026-07-24T14:15:55+05:30",
+    "metadata": { "app_version": "3.4.2", "platform": "Android 13" }
+  },
+  {
+    "external_ref": "phone-8b9c0d",
+    "customer": {
+      "customer_id": "CUST-2057",
+      "name": "Ananya Pandey",
+      "email": "ananya.p@example.com"
+    },
+    "subject": "Request to pause active subscription",
+    "description": "Need to put my monthly billing plan on hold for two months starting from August.",
+    "category": "Billing",
+    "priority": "Medium",
+    "channel": "phone",
+    "created_at": "2026-07-24T15:30:00+05:30",
+    "metadata": { "app_version": null, "platform": null }
+  },
+  {
+    "external_ref": "web-2a3b4c",
+    "customer": {
+      "customer_id": "CUST-2058",
+      "name": "Varun Dhawan",
+      "email": "varun.d@example.com"
+    },
+    "subject": "Web portal throwing CORS error",
+    "description": "I get origin-blocking errors on checkout requests when using Firefox Developer Edition.",
+    "category": "Technical",
+    "priority": "Critical",
+    "channel": "web_app",
+    "created_at": "2026-07-25T09:45:10+05:30",
+    "metadata": { "app_version": "3.4.2", "platform": "macOS 14" }
+  },
+  {
+    "external_ref": "email-7f8g9h",
+    "customer": {
+      "customer_id": "CUST-2059",
+      "name": "Kiara Advani",
+      "email": "kiara.a@example.com"
+    },
+    "subject": "Bulk order discount check",
+    "description": "Inquiring if there are any special seasonal pricing discounts for ordering 100+ units.",
+    "category": "Other",
+    "priority": "Low",
+    "channel": "email",
+    "created_at": "2026-07-25T10:15:30+05:30",
+    "metadata": { "app_version": null, "platform": null }
+  },
+  {
+    "external_ref": "web-4e5f6g",
+    "customer": {
+      "customer_id": "CUST-2060",
+      "name": "Ranbir Kapoor",
+      "email": "ranbir.k@example.com"
+    },
+    "subject": "Incorrect VAT charge on order",
+    "description": "My checkout invoice shows 18% GST instead of the standard 5% applicable to this item class.",
+    "category": "Billing",
+    "priority": "High",
+    "channel": "web_app",
+    "created_at": "2026-07-25T11:20:45+05:30",
+    "metadata": { "app_version": "3.4.2", "platform": "iOS 17" }
+  },
+  {
+    "external_ref": "chat-1h2i3j",
+    "customer": {
+      "customer_id": "CUST-2061",
+      "name": "Alia Bhatt",
+      "email": "alia.b@example.com"
+    },
+    "subject": "Failed package tracking status",
+    "description": "The shipment tracker keeps showing 'Information Received' for the past 4 days without updates.",
+    "category": "Delivery",
+    "priority": "Medium",
+    "channel": "chat",
+    "created_at": "2026-07-25T12:00:00+05:30",
+    "metadata": { "app_version": "3.4.1", "platform": "macOS 14" }
+  }
+]

@@ -30,3 +30,80 @@ Thumbs.db
 .eslintcache
 
 *.tsbuildinfo
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+
+# Virtual environments
+venv/
+.venv/
+env/
+ENV/
+
+# Environment variables
+.env
+.env.*
+
+# Flask
+instance/
+*.db
+
+# Logs
+logs/
+*.log
+
+# IDEs
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Pytest
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Build files
+build/
+dist/
+*.egg-info/
+
+# Model files (if they are large or can be regenerated)
+models/
+*.pkl
+*.joblib
+*.h5
+*.hdf5
+*.keras
+*.onnx
+*.pt
+*.pth
+*.ckpt
+
+# ML artifacts
+checkpoints/
+runs/
+wandb/
+mlruns/
+tensorboard/
+events.out.tfevents.*
+
+# Cache
+.cache/
+
+# Temporary files
+*.tmp
+*.temp
+
+# Secrets
+credentials.json
+service-account.json

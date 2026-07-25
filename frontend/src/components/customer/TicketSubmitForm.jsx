@@ -16,8 +16,6 @@ const INITIAL = {
   description: '',
   category: '',
   priority: 'Medium',
-  customerName: '',
-  customerEmail: '',
 };
 
 function FieldError({ msg }) {
@@ -35,12 +33,6 @@ function FieldError({ msg }) {
 
 function validate(values) {
   const errors = {};
-  if (!values.customerName.trim()) errors.customerName = 'Your name is required';
-  if (!values.customerEmail.trim()) {
-    errors.customerEmail = 'Email address is required';
-  } else if (!/^\S+@\S+\.\S+$/.test(values.customerEmail)) {
-    errors.customerEmail = 'Please enter a valid email address';
-  }
   if (!values.subject.trim()) {
     errors.subject = 'Subject is required';
   } else if (values.subject.trim().length < 5) {
@@ -94,10 +86,6 @@ export default function TicketSubmitForm({ onSuccess }) {
         description: values.description.trim(),
         category: values.category,
         priority: values.priority,
-        customer: {
-          name: values.customerName.trim(),
-          email: values.customerEmail.trim().toLowerCase(),
-        },
       });
       toast.success(`Ticket ${ticket.ticketId} created successfully!`);
       onSuccess(ticket);
@@ -128,49 +116,6 @@ export default function TicketSubmitForm({ onSuccess }) {
 
       <form id="ticket-submit-form" onSubmit={handleSubmit} noValidate>
         <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-
-          {/* ── Customer info section ─────────────────────────────────────────── */}
-          <div className="px-6 py-5 border-b border-slate-100">
-            <h3 className="text-sm font-semibold text-slate-600 uppercase tracking-wider mb-4">
-              Your Information
-            </h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label htmlFor="customerName" className="block text-sm font-medium text-slate-700 mb-1.5">
-                  Full Name <span className="text-red-500">*</span>
-                </label>
-                <input
-                  id="customerName"
-                  name="customerName"
-                  type="text"
-                  value={values.customerName}
-                  onChange={handleChange}
-                  onBlur={handleBlur}
-                  placeholder="Jane Smith"
-                  className={inputClass('customerName')}
-                  autoComplete="name"
-                />
-                <FieldError msg={touched.customerName && errors.customerName} />
-              </div>
-              <div>
-                <label htmlFor="customerEmail" className="block text-sm font-medium text-slate-700 mb-1.5">
-                  Email Address <span className="text-red-500">*</span>
-                </label>
-                <input
-                  id="customerEmail"
-                  name="customerEmail"
-                  type="email"
-                  value={values.customerEmail}
-                  onChange={handleChange}
-                  onBlur={handleBlur}
-                  placeholder="jane@example.com"
-                  className={inputClass('customerEmail')}
-                  autoComplete="email"
-                />
-                <FieldError msg={touched.customerEmail && errors.customerEmail} />
-              </div>
-            </div>
-          </div>
 
           {/* ── Ticket details section ───────────────────────────────────────── */}
           <div className="px-6 py-5 space-y-5">
