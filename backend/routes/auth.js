@@ -117,6 +117,8 @@ router.post('/login', async (req, res, next) => {
       engineerLevel: user.engineerLevel,
       supportAgentId: user.supportAgent,
       customerId: user.customer,
+      name: user.fullName,
+      email: user.email,
     };
 
     // Sign Token (expires in 24 hours)

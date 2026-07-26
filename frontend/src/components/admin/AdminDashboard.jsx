@@ -198,9 +198,9 @@ export default function AdminDashboard() {
 
   // Check if an engineer is eligible based on Level capability vs Ticket priority
   const isAgentEligible = (agentLevel, priority) => {
-    if (priority === 'Low') return true; // all can handle Low
+    if (priority === 'Low') return true;
     if (priority === 'Medium') return ['L2', 'L3'].includes(agentLevel);
-    if (priority === 'High' || priority === 'Critical') return agentLevel === 'L3';
+    if (priority === 'High') return agentLevel === 'L3';
     return false;
   };
 
@@ -480,9 +480,9 @@ export default function AdminDashboard() {
                       <p className="text-3xl font-extrabold text-emerald-600 mt-1">{analytics.status.Resolved || 0}</p>
                     </div>
                     <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
-                      <span className="text-slate-400 text-xs font-semibold block uppercase">Critical & High Priority</span>
+                      <span className="text-slate-400 text-xs font-semibold block uppercase">High Priority</span>
                       <p className="text-3xl font-extrabold text-amber-600 mt-1">
-                        {(analytics.priority.Critical || 0) + (analytics.priority.High || 0)}
+                        {analytics.priority.High || 0}
                       </p>
                     </div>
                   </div>
@@ -532,18 +532,6 @@ export default function AdminDashboard() {
                       </div>
                     </div>
 
-                    {/* Support level distribution */}
-                    <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 space-y-4">
-                      <h3 className="font-bold text-slate-800 text-sm uppercase tracking-wider border-b border-slate-50 pb-2">Tickets by Support Level</h3>
-                      <div className="space-y-3">
-                        {Object.entries(analytics.levels).map(([k, v]) => (
-                          <div key={k} className="flex justify-between items-center text-sm">
-                            <span className="text-slate-600 font-medium">{k}</span>
-                            <span className="bg-slate-100 px-2.5 py-0.5 rounded-full font-bold text-slate-800">{v}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
                   </div>
 
                   {/* Support Agent Workloads */}
@@ -631,7 +619,7 @@ export default function AdminDashboard() {
                     className="w-full rounded-lg border border-slate-300 px-2 py-2 text-xs"
                   >
                     <option value="">All</option>
-                    <option value="Open">Open</option>
+                    <option value="New">New</option>
                     <option value="Assigned">Assigned</option>
                     <option value="In Progress">In Progress</option>
                     <option value="Resolved">Resolved</option>
@@ -650,7 +638,6 @@ export default function AdminDashboard() {
                     <option value="Low">Low</option>
                     <option value="Medium">Medium</option>
                     <option value="High">High</option>
-                    <option value="Critical">Critical</option>
                   </select>
                 </div>
 

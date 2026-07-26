@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { useTickets } from '../../hooks/useTickets';
+import { useNotifications } from '../../hooks/useNotifications';
 import StatusBadge from '../ui/StatusBadge';
 import PriorityBadge from '../ui/PriorityBadge';
 import StatusStepper from '../ui/StatusStepper';
@@ -25,6 +26,7 @@ function formatDate(d) {
 
 export default function TicketDetail({ ticketId, onNavigate }) {
   const { currentTicket: ticket, loading, error, fetchTicketById } = useTickets({ autoFetch: false });
+  const { notifications } = useNotifications();
 
   useEffect(() => {
     if (ticketId) fetchTicketById(ticketId);
@@ -122,7 +124,7 @@ export default function TicketDetail({ ticketId, onNavigate }) {
             <span className="text-sm font-semibold text-slate-700">{formatDate(ticket.createdAt)}</span>
           </InfoItem>
           <InfoItem label="Assigned To">
-            <span className="text-sm font-semibold text-slate-700">{ticket.assignedTo || 'Unassigned'}</span>
+            <span className="text-sm font-semibold text-slate-700">{ticket.assignedEngineer ? ticket.assignedEngineer.name : 'Waiting for Assignment'}</span>
           </InfoItem>
         </dl>
 
@@ -141,16 +143,46 @@ export default function TicketDetail({ ticketId, onNavigate }) {
         </div>
       </div>
 
-      {/* Activity timeline */}
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-        <div className="px-6 py-4 border-b border-slate-100">
-          <h3 className="font-semibold text-slate-700">Activity & History</h3>
-          <p className="text-xs text-slate-400 mt-0.5">
-            {ticket.activity?.length ?? 0} event{ticket.activity?.length !== 1 ? 's' : ''}
-          </p>
+      {/* Activity timeline & Notifications Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Activity timeline */}
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+          <div className="px-6 py-4 border-b border-slate-100">
+            <h3 className="font-semibold text-slate-700">Activity & History</h3>
+            <p className="text-xs text-slate-400 mt-0.5">
+              {ticket.activity?.length ?? 0} event{ticket.activity?.length !== 1 ? 's' : ''}
+            </p>
+          </div>
+          <div className="px-6 py-5">
+            <ActivityTimeline activities={ticket.activity ?? []} />
+          </div>
         </div>
-        <div className="px-6 py-5">
-          <ActivityTimeline activities={ticket.activity ?? []} />
+
+        {/* Latest notifications */}
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+          <div className="px-6 py-4 border-b border-slate-100">
+            <h3 className="font-semibold text-slate-700">Recent Notifications</h3>
+            <p className="text-xs text-slate-400 mt-0.5">Alerts related to this ticket</p>
+          </div>
+          <div className="px-6 py-5">
+            {(() => {
+              const ticketNotifs = notifications.filter((n) => n.ticketId === ticket.ticketId).slice(0, 5);
+              if (ticketNotifs.length === 0) {
+                return <p className="text-sm text-slate-500">No notifications yet.</p>;
+              }
+              return (
+                <ul className="space-y-4">
+                  {ticketNotifs.map((n) => (
+                    <li key={n._id} className="text-sm">
+                      <p className="font-medium text-slate-700">{n.title}</p>
+                      <p className="text-slate-500 text-xs mt-0.5">{n.message}</p>
+                      <p className="text-slate-400 text-xs mt-1 tabular-nums">{new Date(n.createdAt).toLocaleString()}</p>
+                    </li>
+                  ))}
+                </ul>
+              );
+            })()}
+          </div>
         </div>
       </div>
     </div>

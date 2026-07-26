@@ -1,0 +1,602 @@
+[
+  {
+    "subject": "Damaged item",
+    "description": "The package arrived crushed and the item is broken. I want a replacement. Ticket reference 78.",
+    "finalCategory": "Delivery",
+    "finalPriority": "Critical"
+  },
+  {
+    "subject": "Pricing query [6]",
+    "description": "I have a doubt regarding pricing. Can you explain the difference between Pro and Enterprise? Ticket reference 6.",
+    "finalCategory": "Billing",
+    "finalPriority": "Medium"
+  },
+  {
+    "subject": "Sales contact [98]",
+    "description": "I want to talk to sales about a custom plan. Ticket reference 98.",
+    "finalCategory": "Other",
+    "finalPriority": "Critical"
+  },
+  {
+    "subject": "Profile picture not updating [51]",
+    "description": "I uploaded a new avatar but it still shows the old one. Ticket reference 51.",
+    "finalCategory": "Account",
+    "finalPriority": "High"
+  },
+  {
+    "subject": "Delivery scheduled on weekend",
+    "description": "Can you deliver on Monday instead? Our office is closed. Ticket reference 76.",
+    "finalCategory": "Delivery",
+    "finalPriority": "Critical"
+  },
+  {
+    "subject": "Invoice not received [3]",
+    "description": "I haven't received my invoice for the last month. Please send it. Ticket reference 3.",
+    "finalCategory": "Billing",
+    "finalPriority": "Low"
+  },
+  {
+    "subject": "Damaged item",
+    "description": "The package arrived crushed and the item is broken. I want a replacement. Ticket reference 69.",
+    "finalCategory": "Delivery",
+    "finalPriority": "Medium"
+  },
+  {
+    "subject": "Delete my account [42]",
+    "description": "Please delete my account and all associated data under GDPR. Ticket reference 42.",
+    "finalCategory": "Account",
+    "finalPriority": "Low"
+  },
+  {
+    "subject": "Feature request: Dark mode [97]",
+    "description": "Please add a dark mode. My eyes hurt at night. Ticket reference 97.",
+    "finalCategory": "Other",
+    "finalPriority": "Critical"
+  },
+  {
+    "subject": "Sales contact [99]",
+    "description": "I want to talk to sales about a custom plan. Ticket reference 99.",
+    "finalCategory": "Other",
+    "finalPriority": "Critical"
+  },
+  {
+    "subject": "MFA not working",
+    "description": "I lost my phone and cannot get past the 2FA screen. Ticket reference 54.",
+    "finalCategory": "Account",
+    "finalPriority": "High"
+  },
+  {
+    "subject": "How do I export data? [34]",
+    "description": "Is there a way to export my data to CSV? I don't see the button. Ticket reference 34.",
+    "finalCategory": "Technical",
+    "finalPriority": "High"
+  },
+  {
+    "subject": "Change email address [44]",
+    "description": "How can I change my registered email? I am leaving my company. Ticket reference 44.",
+    "finalCategory": "Account",
+    "finalPriority": "Low"
+  },
+  {
+    "subject": "Overcharged on last bill",
+    "description": "I was charged twice for my subscription this month. Please refund the extra amount. Ticket reference 13.",
+    "finalCategory": "Billing",
+    "finalPriority": "High"
+  },
+  {
+    "subject": "Integration failing [21]",
+    "description": "The Jira integration stopped working after the recent update. Ticket reference 21.",
+    "finalCategory": "Technical",
+    "finalPriority": "Low"
+  },
+  {
+    "subject": "Late delivery",
+    "description": "I paid for expedited shipping but it has been a week. Ticket reference 71.",
+    "finalCategory": "Delivery",
+    "finalPriority": "High"
+  },
+  {
+    "subject": "General question",
+    "description": "What are your business hours? Ticket reference 87.",
+    "finalCategory": "Other",
+    "finalPriority": "Medium"
+  },
+  {
+    "subject": "API rate limit exceeded [22]",
+    "description": "We are suddenly hitting API limits even though our traffic hasn't changed. Ticket reference 22.",
+    "finalCategory": "Technical",
+    "finalPriority": "Low"
+  },
+  {
+    "subject": "Delete my account [41]",
+    "description": "Please delete my account and all associated data under GDPR. Ticket reference 41.",
+    "finalCategory": "Account",
+    "finalPriority": "Low"
+  },
+  {
+    "subject": "Change shipping address",
+    "description": "I made a mistake in my address. Can I change it before it ships? Ticket reference 77.",
+    "finalCategory": "Delivery",
+    "finalPriority": "Critical"
+  },
+  {
+    "subject": "Change shipping address [70]",
+    "description": "I made a mistake in my address. Can I change it before it ships? Ticket reference 70.",
+    "finalCategory": "Delivery",
+    "finalPriority": "Medium"
+  },
+  {
+    "subject": "Overcharged on last bill [8]",
+    "description": "I was charged twice for my subscription this month. Please refund the extra amount. Ticket reference 8.",
+    "finalCategory": "Billing",
+    "finalPriority": "Medium"
+  },
+  {
+    "subject": "Late delivery",
+    "description": "I paid for expedited shipping but it has been a week. Ticket reference 67.",
+    "finalCategory": "Delivery",
+    "finalPriority": "Medium"
+  },
+  {
+    "subject": "Sync not working [25]",
+    "description": "My offline changes are not syncing with the cloud version. Ticket reference 25.",
+    "finalCategory": "Technical",
+    "finalPriority": "Low"
+  },
+  {
+    "subject": "Delivery scheduled on weekend",
+    "description": "Can you deliver on Monday instead? Our office is closed. Ticket reference 80.",
+    "finalCategory": "Delivery",
+    "finalPriority": "Critical"
+  },
+  {
+    "subject": "Role change request [46]",
+    "description": "Can you upgrade my user role to Admin? Ticket reference 46.",
+    "finalCategory": "Account",
+    "finalPriority": "Medium"
+  },
+  {
+    "subject": "Return label request",
+    "description": "How do I get a return shipping label? Ticket reference 74.",
+    "finalCategory": "Delivery",
+    "finalPriority": "High"
+  },
+  {
+    "subject": "Change email address [43]",
+    "description": "How can I change my registered email? I am leaving my company. Ticket reference 43.",
+    "finalCategory": "Account",
+    "finalPriority": "Low"
+  },
+  {
+    "subject": "General question [82]",
+    "description": "What are your business hours? Ticket reference 82.",
+    "finalCategory": "Other",
+    "finalPriority": "Low"
+  },
+  {
+    "subject": "Feature request: Dark mode",
+    "description": "Please add a dark mode. My eyes hurt at night. Ticket reference 88.",
+    "finalCategory": "Other",
+    "finalPriority": "Medium"
+  },
+  {
+    "subject": "Sales contact",
+    "description": "I want to talk to sales about a custom plan. Ticket reference 91.",
+    "finalCategory": "Other",
+    "finalPriority": "High"
+  },
+  {
+    "subject": "Delete my account [52]",
+    "description": "Please delete my account and all associated data under GDPR. Ticket reference 52.",
+    "finalCategory": "Account",
+    "finalPriority": "High"
+  },
+  {
+    "subject": "Bug in reports",
+    "description": "The weekly report shows $0 for all metrics. Ticket reference 31.",
+    "finalCategory": "Technical",
+    "finalPriority": "High"
+  },
+  {
+    "subject": "Slow performance [30]",
+    "description": "The dashboard is taking over 30 seconds to load today. It's usually instant. Ticket reference 30.",
+    "finalCategory": "Technical",
+    "finalPriority": "Medium"
+  },
+  {
+    "subject": "Sales contact [89]",
+    "description": "I want to talk to sales about a custom plan. Ticket reference 89.",
+    "finalCategory": "Other",
+    "finalPriority": "Medium"
+  },
+  {
+    "subject": "Feature request: Dark mode",
+    "description": "Please add a dark mode. My eyes hurt at night. Ticket reference 84.",
+    "finalCategory": "Other",
+    "finalPriority": "Low"
+  },
+  {
+    "subject": "General question",
+    "description": "What are your business hours? Ticket reference 86.",
+    "finalCategory": "Other",
+    "finalPriority": "Medium"
+  },
+  {
+    "subject": "API rate limit exceeded [28]",
+    "description": "We are suddenly hitting API limits even though our traffic hasn't changed. Ticket reference 28.",
+    "finalCategory": "Technical",
+    "finalPriority": "Medium"
+  },
+  {
+    "subject": "Return label request",
+    "description": "How do I get a return shipping label? Ticket reference 79.",
+    "finalCategory": "Delivery",
+    "finalPriority": "Critical"
+  },
+  {
+    "subject": "Missing parts [63]",
+    "description": "Order #999 arrived but the power cable is missing from the box. Ticket reference 63.",
+    "finalCategory": "Delivery",
+    "finalPriority": "Low"
+  },
+  {
+    "subject": "Unclear request [95]",
+    "description": "It is broken. Ticket reference 95.",
+    "finalCategory": "Other",
+    "finalPriority": "High"
+  },
+  {
+    "subject": "General question",
+    "description": "What are your business hours? Ticket reference 83.",
+    "finalCategory": "Other",
+    "finalPriority": "Low"
+  },
+  {
+    "subject": "Payment failed",
+    "description": "My credit card was charged but the payment shows as failed on the dashboard. Need this fixed ASAP. Ticket reference 20.",
+    "finalCategory": "Billing",
+    "finalPriority": "Critical"
+  },
+  {
+    "subject": "Sync not working [36]",
+    "description": "My offline changes are not syncing with the cloud version. Ticket reference 36.",
+    "finalCategory": "Technical",
+    "finalPriority": "Critical"
+  },
+  {
+    "subject": "Subscription renewal doubt [11]",
+    "description": "Will my subscription auto-renew next month? I want to stop it. Ticket reference 11.",
+    "finalCategory": "Billing",
+    "finalPriority": "High"
+  },
+  {
+    "subject": "App keeps crashing [40]",
+    "description": "The mobile app crashes every time I try to upload a photo. iPhone 13, iOS 16. Ticket reference 40.",
+    "finalCategory": "Technical",
+    "finalPriority": "Critical"
+  },
+  {
+    "subject": "Sync not working",
+    "description": "My offline changes are not syncing with the cloud version. Ticket reference 27.",
+    "finalCategory": "Technical",
+    "finalPriority": "Medium"
+  },
+  {
+    "subject": "How to update payment method [9]",
+    "description": "Where can I change my credit card details? My old one is expiring soon. Ticket reference 9.",
+    "finalCategory": "Billing",
+    "finalPriority": "Medium"
+  },
+  {
+    "subject": "App keeps crashing",
+    "description": "The mobile app crashes every time I try to upload a photo. iPhone 13, iOS 16. Ticket reference 23.",
+    "finalCategory": "Technical",
+    "finalPriority": "Low"
+  },
+  {
+    "subject": "Missing parts",
+    "description": "Order #999 arrived but the power cable is missing from the box. Ticket reference 68.",
+    "finalCategory": "Delivery",
+    "finalPriority": "Medium"
+  },
+  {
+    "subject": "Bug in reports",
+    "description": "The weekly report shows $0 for all metrics. Ticket reference 33.",
+    "finalCategory": "Technical",
+    "finalPriority": "High"
+  },
+  {
+    "subject": "Enterprise billing issue [5]",
+    "description": "Our corporate account is locked due to a billing issue. This is halting our work. Ticket reference 5.",
+    "finalCategory": "Billing",
+    "finalPriority": "Low"
+  },
+  {
+    "subject": "Bug in reports",
+    "description": "The weekly report shows $0 for all metrics. Ticket reference 39.",
+    "finalCategory": "Technical",
+    "finalPriority": "Critical"
+  },
+  {
+    "subject": "Job application [90]",
+    "description": "Where can I apply for the marketing role? Ticket reference 90.",
+    "finalCategory": "Other",
+    "finalPriority": "Medium"
+  },
+  {
+    "subject": "Invoice not received [7]",
+    "description": "I haven't received my invoice for the last month. Please send it. Ticket reference 7.",
+    "finalCategory": "Billing",
+    "finalPriority": "Medium"
+  },
+  {
+    "subject": "Just chatting",
+    "description": "Nothing much, just chatting to see if this bot works. Ticket reference 100.",
+    "finalCategory": "Other",
+    "finalPriority": "Critical"
+  },
+  {
+    "subject": "Account locked [48]",
+    "description": "My account says it's locked due to too many failed attempts. Help! Ticket reference 48.",
+    "finalCategory": "Account",
+    "finalPriority": "Medium"
+  },
+  {
+    "subject": "Integration failing",
+    "description": "The Jira integration stopped working after the recent update. Ticket reference 29.",
+    "finalCategory": "Technical",
+    "finalPriority": "Medium"
+  },
+  {
+    "subject": "Slow performance",
+    "description": "The dashboard is taking over 30 seconds to load today. It's usually instant. Ticket reference 32.",
+    "finalCategory": "Technical",
+    "finalPriority": "High"
+  },
+  {
+    "subject": "Change shipping address [65]",
+    "description": "I made a mistake in my address. Can I change it before it ships? Ticket reference 65.",
+    "finalCategory": "Delivery",
+    "finalPriority": "Low"
+  },
+  {
+    "subject": "Just chatting [81]",
+    "description": "Nothing much, just chatting to see if this bot works. Ticket reference 81.",
+    "finalCategory": "Other",
+    "finalPriority": "Low"
+  },
+  {
+    "subject": "Error 500 on checkout",
+    "description": "When I click pay, the screen goes white and says Internal Server Error. Ticket reference 38.",
+    "finalCategory": "Technical",
+    "finalPriority": "Critical"
+  },
+  {
+    "subject": "Job application [96]",
+    "description": "Where can I apply for the marketing role? Ticket reference 96.",
+    "finalCategory": "Other",
+    "finalPriority": "Critical"
+  },
+  {
+    "subject": "Return label request",
+    "description": "How do I get a return shipping label? Ticket reference 75.",
+    "finalCategory": "Delivery",
+    "finalPriority": "High"
+  },
+  {
+    "subject": "Payment failed",
+    "description": "My credit card was charged but the payment shows as failed on the dashboard. Need this fixed ASAP. Ticket reference 19.",
+    "finalCategory": "Billing",
+    "finalPriority": "Critical"
+  },
+  {
+    "subject": "Role change request [49]",
+    "description": "Can you upgrade my user role to Admin? Ticket reference 49.",
+    "finalCategory": "Account",
+    "finalPriority": "Medium"
+  },
+  {
+    "subject": "Refund request",
+    "description": "I would like to request a refund for order #1234. I canceled it before shipping. Ticket reference 4.",
+    "finalCategory": "Billing",
+    "finalPriority": "Low"
+  },
+  {
+    "subject": "Overcharged on last bill",
+    "description": "I was charged twice for my subscription this month. Please refund the extra amount. Ticket reference 18.",
+    "finalCategory": "Billing",
+    "finalPriority": "Critical"
+  },
+  {
+    "subject": "Late delivery",
+    "description": "I paid for expedited shipping but it has been a week. Ticket reference 61.",
+    "finalCategory": "Delivery",
+    "finalPriority": "Low"
+  },
+  {
+    "subject": "App keeps crashing [37]",
+    "description": "The mobile app crashes every time I try to upload a photo. iPhone 13, iOS 16. Ticket reference 37.",
+    "finalCategory": "Technical",
+    "finalPriority": "Critical"
+  },
+  {
+    "subject": "Partnership inquiry [85]",
+    "description": "We are an agency looking to partner with you. Who should we contact? Ticket reference 85.",
+    "finalCategory": "Other",
+    "finalPriority": "Low"
+  },
+  {
+    "subject": "Payment failed",
+    "description": "My credit card was charged but the payment shows as failed on the dashboard. Need this fixed ASAP. Ticket reference 1.",
+    "finalCategory": "Billing",
+    "finalPriority": "Low"
+  },
+  {
+    "subject": "Damaged item [73]",
+    "description": "The package arrived crushed and the item is broken. I want a replacement. Ticket reference 73.",
+    "finalCategory": "Delivery",
+    "finalPriority": "High"
+  },
+  {
+    "subject": "How do I export data?",
+    "description": "Is there a way to export my data to CSV? I don't see the button. Ticket reference 24.",
+    "finalCategory": "Technical",
+    "finalPriority": "Low"
+  },
+  {
+    "subject": "How do I export data?",
+    "description": "Is there a way to export my data to CSV? I don't see the button. Ticket reference 26.",
+    "finalCategory": "Technical",
+    "finalPriority": "Medium"
+  },
+  {
+    "subject": "Unclear request",
+    "description": "It is broken. Ticket reference 93.",
+    "finalCategory": "Other",
+    "finalPriority": "High"
+  },
+  {
+    "subject": "Forgot password",
+    "description": "I can't log in and the reset password link is not arriving in my email. Ticket reference 47.",
+    "finalCategory": "Account",
+    "finalPriority": "Medium"
+  },
+  {
+    "subject": "Delete my account [58]",
+    "description": "Please delete my account and all associated data under GDPR. Ticket reference 58.",
+    "finalCategory": "Account",
+    "finalPriority": "Critical"
+  },
+  {
+    "subject": "How to update payment method",
+    "description": "Where can I change my credit card details? My old one is expiring soon. Ticket reference 10.",
+    "finalCategory": "Billing",
+    "finalPriority": "Medium"
+  },
+  {
+    "subject": "Add new team member [55]",
+    "description": "I want to invite a new developer to our workspace but I don't have permissions. Ticket reference 55.",
+    "finalCategory": "Account",
+    "finalPriority": "High"
+  },
+  {
+    "subject": "How to update payment method [14]",
+    "description": "Where can I change my credit card details? My old one is expiring soon. Ticket reference 14.",
+    "finalCategory": "Billing",
+    "finalPriority": "High"
+  },
+  {
+    "subject": "Add new team member [60]",
+    "description": "I want to invite a new developer to our workspace but I don't have permissions. Ticket reference 60.",
+    "finalCategory": "Account",
+    "finalPriority": "Critical"
+  },
+  {
+    "subject": "Return label request [72]",
+    "description": "How do I get a return shipping label? Ticket reference 72.",
+    "finalCategory": "Delivery",
+    "finalPriority": "High"
+  },
+  {
+    "subject": "Role change request [57]",
+    "description": "Can you upgrade my user role to Admin? Ticket reference 57.",
+    "finalCategory": "Account",
+    "finalPriority": "Critical"
+  },
+  {
+    "subject": "Database connection timeout",
+    "description": "All our users are seeing database timeout errors. Production is down!! Ticket reference 35.",
+    "finalCategory": "Technical",
+    "finalPriority": "High"
+  },
+  {
+    "subject": "Role change request [50]",
+    "description": "Can you upgrade my user role to Admin? Ticket reference 50.",
+    "finalCategory": "Account",
+    "finalPriority": "Medium"
+  },
+  {
+    "subject": "Overcharged on last bill [15]",
+    "description": "I was charged twice for my subscription this month. Please refund the extra amount. Ticket reference 15.",
+    "finalCategory": "Billing",
+    "finalPriority": "High"
+  },
+  {
+    "subject": "Payment failed",
+    "description": "My credit card was charged but the payment shows as failed on the dashboard. Need this fixed ASAP. Ticket reference 2.",
+    "finalCategory": "Billing",
+    "finalPriority": "Low"
+  },
+  {
+    "subject": "Damaged item",
+    "description": "The package arrived crushed and the item is broken. I want a replacement. Ticket reference 62.",
+    "finalCategory": "Delivery",
+    "finalPriority": "Low"
+  },
+  {
+    "subject": "MFA not working [45]",
+    "description": "I lost my phone and cannot get past the 2FA screen. Ticket reference 45.",
+    "finalCategory": "Account",
+    "finalPriority": "Low"
+  },
+  {
+    "subject": "Missing parts [64]",
+    "description": "Order #999 arrived but the power cable is missing from the box. Ticket reference 64.",
+    "finalCategory": "Delivery",
+    "finalPriority": "Low"
+  },
+  {
+    "subject": "Feature request: Dark mode",
+    "description": "Please add a dark mode. My eyes hurt at night. Ticket reference 94.",
+    "finalCategory": "Other",
+    "finalPriority": "High"
+  },
+  {
+    "subject": "Add new team member [59]",
+    "description": "I want to invite a new developer to our workspace but I don't have permissions. Ticket reference 59.",
+    "finalCategory": "Account",
+    "finalPriority": "Critical"
+  },
+  {
+    "subject": "Role change request",
+    "description": "Can you upgrade my user role to Admin? Ticket reference 53.",
+    "finalCategory": "Account",
+    "finalPriority": "High"
+  },
+  {
+    "subject": "Delete my account [56]",
+    "description": "Please delete my account and all associated data under GDPR. Ticket reference 56.",
+    "finalCategory": "Account",
+    "finalPriority": "Critical"
+  },
+  {
+    "subject": "Just chatting",
+    "description": "Nothing much, just chatting to see if this bot works. Ticket reference 92.",
+    "finalCategory": "Other",
+    "finalPriority": "High"
+  },
+  {
+    "subject": "Refund request [16]",
+    "description": "I would like to request a refund for order #1234. I canceled it before shipping. Ticket reference 16.",
+    "finalCategory": "Billing",
+    "finalPriority": "Critical"
+  },
+  {
+    "subject": "Pricing query",
+    "description": "I have a doubt regarding pricing. Can you explain the difference between Pro and Enterprise? Ticket reference 12.",
+    "finalCategory": "Billing",
+    "finalPriority": "High"
+  },
+  {
+    "subject": "Missing parts [66]",
+    "description": "Order #999 arrived but the power cable is missing from the box. Ticket reference 66.",
+    "finalCategory": "Delivery",
+    "finalPriority": "Medium"
+  },
+  {
+    "subject": "Overcharged on last bill [17]",
+    "description": "I was charged twice for my subscription this month. Please refund the extra amount. Ticket reference 17.",
+    "finalCategory": "Billing",
+    "finalPriority": "Critical"
+  }
+]

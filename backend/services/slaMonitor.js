@@ -61,8 +61,10 @@ async function handleSLABreach(ticket) {
   }
 
   // Try to find an agent at the next level
-  const resolvedPriority = ticket.aiPriority || ticket.priority;
-  const result = await findAndAssign(resolvedPriority);
+  const resolvedPriority = ticket.aiPriority || ticket.predictedPriority || ticket.priority;
+  const result = await findAndAssign(resolvedPriority, ticket.ticketId, {
+    category: ticket.aiCategory || ticket.predictedCategory || ticket.category,
+  });
 
   const escalationEntry = {
     fromLevel: currentLevel,
@@ -77,6 +79,8 @@ async function handleSLABreach(ticket) {
   if (result) {
     ticket.assignedAgent = result.agent._id;
     ticket.assignedLevel = result.assignedLevel;
+    ticket.requiredLevel = result.requiredLevel || ticket.requiredLevel;
+    ticket.assignmentReason = result.assignmentReason;
     ticket.assignmentTimestamp = new Date();
     ticket.status = 'Assigned';
     ticket.isQueued = false;
@@ -101,7 +105,7 @@ async function handleSLABreach(ticket) {
   } else {
     // Still no agent at next level — keep queued
     ticket.isQueued = true;
-    ticket.status = 'Open';
+    ticket.status = 'New';
     // Extend SLA deadline by the next level's SLA window
     const nextSlaHours = cfg.SLA_HOURS[resolvedPriority] ?? 4;
     ticket.slaDeadline = new Date(Date.now() + nextSlaHours * 60 * 60 * 1000 * 0.5); // 50% of SLA

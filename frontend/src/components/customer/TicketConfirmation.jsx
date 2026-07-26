@@ -3,7 +3,6 @@ import StatusBadge from '../ui/StatusBadge';
 import PriorityBadge from '../ui/PriorityBadge';
 
 const PRIORITY_ETA = {
-  Critical: '2–4 hours',
   High: '4–8 hours',
   Medium: '1–2 business days',
   Low: '3–5 business days',

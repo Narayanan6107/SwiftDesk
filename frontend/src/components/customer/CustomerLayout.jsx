@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import NotificationCenter from './NotificationCenter';
 
 const NAV_ITEMS = [
   {
@@ -152,8 +153,11 @@ export default function CustomerLayout({ children, currentPage, onNavigate }) {
             </span>
           </div>
 
-          {/* Right side — New ticket shortcut */}
-          <div className="ml-auto flex items-center gap-3">
+          {/* Right side — Notification Center + New ticket shortcut */}
+          <div className="ml-auto flex items-center gap-2">
+            {/* Notification bell — customer portal only */}
+            <NotificationCenter />
+
             <button
               id="header-new-ticket"
               onClick={() => onNavigate('submit')}

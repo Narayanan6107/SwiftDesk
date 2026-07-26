@@ -18,6 +18,29 @@
 
 const ML_SERVICE_URL = process.env.ML_SERVICE_URL || 'http://localhost:8000';
 const ML_REQUEST_TIMEOUT_MS = parseInt(process.env.ML_REQUEST_TIMEOUT_MS || '5000', 10);
+const { resolvePredictedPriority } = require('../config/automation');
+const { logMlPrediction } = require('./assignmentLogger');
+
+const VALID_ML_CATEGORIES = new Set([
+  'Technical', 'Billing', 'Account', 'General', 'Feature Request', 'Delivery', 'Other',
+]);
+
+function normalizeMlCategory(rawCategory) {
+  if (!rawCategory) return { category: 'General', invalid: true };
+  const trimmed = String(rawCategory).trim();
+  if (!trimmed) return { category: 'General', invalid: true };
+  if (VALID_ML_CATEGORIES.has(trimmed)) return { category: trimmed, invalid: false };
+  return { category: 'General', invalid: true };
+}
+
+function normalizeMlPriorityOutput(rawPriority) {
+  const resolved = resolvePredictedPriority(rawPriority);
+  return {
+    priority: resolved.value,
+    invalid: resolved.invalid,
+    slaPriority: resolved.slaPriority,
+  };
+}
 
 // ── Local keyword fallback (used when Python service is down) ─────────────────
 
@@ -68,19 +91,19 @@ const CATEGORY_RULES = [
 
 const PRIORITY_RULES = [
   {
-    priority: 'Critical',
+    priority: 'High',
     weight: 1,
     keywords: [
       'urgent', 'critical', 'emergency', 'outage', 'production down',
       'all users affected', 'data loss', 'immediately', 'asap', 'system down',
+      'important', 'many users', 'multiple users', 'significant', 'major', 'serious', 'blocking',
     ],
   },
   {
     priority: 'High',
-    weight: 1,
+    weight: 0.9,
     keywords: [
-      'high', 'important', 'quickly', 'many users', 'multiple users',
-      'significant', 'major', 'serious', 'blocking',
+      'high', 'quickly', 'many users', 'significant', 'major', 'serious', 'blocking',
     ],
   },
   {
@@ -210,24 +233,132 @@ async function classify(subject, description) {
   const mlResult = await _callMLService(subject, description);
 
   if (mlResult) {
-    return {
+    logMlPrediction({
       category: mlResult.predicted_category,
       priority: mlResult.predicted_priority,
       confidence: mlResult.confidence,
-      // Python service signals when LLM is needed;
-      // we translate this back into a confidence below threshold
-      // so the existing pipeline logic (in routes/tickets.js) works unchanged.
-      sentiment: 'neutral', // Python service doesn't classify sentiment
+      source: 'ml_service_raw',
+    });
+
+    const categoryNorm = normalizeMlCategory(mlResult.predicted_category);
+    const priorityNorm = normalizeMlPriorityOutput(mlResult.predicted_priority);
+
+    if (priorityNorm.invalid) {
+      console.warn(
+        `[ML-Service] Invalid or missing priority "${mlResult.predicted_priority}" — defaulting to ${priorityNorm.priority}`
+      );
+    }
+
+    const normalizedPayload = {
+      category: categoryNorm.category,
+      priority: priorityNorm.priority,
+      confidence: typeof mlResult.confidence === 'number' ? mlResult.confidence : 0,
+    };
+
+    logMlPrediction({
+      ...normalizedPayload,
+      source: 'ml_service_normalized',
+    });
+
+    return {
+      category: normalizedPayload.category,
+      priority: normalizedPayload.priority,
+      confidence: normalizedPayload.confidence,
+      sentiment: 'neutral',
       scores: {
-        category: { [mlResult.predicted_category]: mlResult.category_confidence },
-        priority: { [mlResult.predicted_priority]: mlResult.priority_confidence },
+        category: { [normalizedPayload.category]: mlResult.category_confidence },
+        priority: { [normalizedPayload.priority]: mlResult.priority_confidence },
       },
       source: 'ml_service',
+      slaPriority: priorityNorm.slaPriority,
+      invalidPriority: priorityNorm.invalid,
+      invalidCategory: categoryNorm.invalid,
     };
   }
 
-  // Keyword fallback — confidence always < threshold so LLM will validate
-  return _keywordClassify(subject, description);
+  const fallback = _keywordClassify(subject, description);
+  logMlPrediction({
+    category: fallback.category,
+    priority: fallback.priority,
+    confidence: fallback.confidence,
+    source: 'keyword_fallback',
+  });
+  return fallback;
 }
 
-module.exports = { classify };
+async function callMLAssignment(ticketId, priority, engineers) {
+  try {
+    const res = await fetch(`${ML_SERVICE_URL}/assign`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        ticket: { ticketId, priority },
+        engineers: engineers.map(eng => ({
+          _id: eng._id.toString(),
+          id: eng._id.toString(),
+          agent_id: eng.agent_id,
+          name: eng.name,
+          level: eng.level,
+          status: eng.status,
+          active_tickets: eng.active_tickets,
+          max_capacity: eng.max_capacity,
+        })),
+      }),
+    });
+
+    if (!res.ok) {
+      console.error(`[ML-Service Assign] HTTP ${res.status}`);
+      return null;
+    }
+
+    return await res.json();
+  } catch (err) {
+    return null;
+  }
+}
+
+/**
+ * Call the combined /predict-and-assign endpoint.
+ * Predicts priority from text and assigns to best engineer in one call.
+ *
+ * @param {string} ticketId
+ * @param {string} subject
+ * @param {string} description
+ * @param {Array} engineers - Array of SupportAgent mongoose docs
+ * @returns {Promise<{ success, engineerId, predictedPriority, predictedCategory, confidence, reason } | null>}
+ */
+async function callPredictAndAssign(ticketId, subject, description, engineers) {
+  try {
+    const res = await fetch(`${ML_SERVICE_URL}/predict-and-assign`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        ticketId,
+        subject,
+        description,
+        engineers: engineers.map(eng => ({
+          _id: eng._id?.toString() || eng.id?.toString() || '',
+          id: eng._id?.toString() || eng.id?.toString() || '',
+          agent_id: eng.agent_id || '',
+          name: eng.name,
+          level: eng.level,
+          status: eng.status,
+          active_tickets: eng.active_tickets,
+          max_capacity: eng.max_capacity,
+        })),
+      }),
+    });
+
+    if (!res.ok) {
+      console.error(`[ML-Service PredictAndAssign] HTTP ${res.status}`);
+      return null;
+    }
+
+    return await res.json();
+  } catch (err) {
+    console.warn(`[ML-Service PredictAndAssign] Unavailable: ${err.message}`);
+    return null;
+  }
+}
+
+module.exports = { classify, callMLAssignment, callPredictAndAssign };

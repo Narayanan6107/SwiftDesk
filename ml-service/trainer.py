@@ -36,7 +36,7 @@ logger = logging.getLogger(__name__)
 CATEGORY_MODEL_FILE = "category_model.joblib"
 PRIORITY_MODEL_FILE = "priority_model.joblib"
 
-VALID_CATEGORIES = {"Technical", "Billing", "General", "Account", "Feature Request"}
+VALID_CATEGORIES = {"Technical", "Billing", "General", "Account", "Feature Request", "Delivery", "Other"}
 VALID_PRIORITIES = {"Low", "Medium", "High", "Critical"}
 
 

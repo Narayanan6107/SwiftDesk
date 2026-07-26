@@ -7,7 +7,9 @@ const SupportAgent = require('../models/SupportAgent');
 const AuditLog = require('../models/AuditLog');
 const { createError } = require('../middleware/errorHandler');
 const { authenticate, requireAdmin } = require('../middleware/auth');
-const { _eligibleLevels } = require('../services/assignmentEngine');
+const { getLevelPreferenceOrder } = require('../config/automation');
+const { tryAssignToEngineer, releaseTicket, getAgentCapacityStatus } = require('../services/assignmentEngine');
+const { getQueueStatus } = require('../services/queueManager');
 
 // Ensure all routes under /api/admin require authentication and admin role
 router.use(authenticate, requireAdmin);
@@ -49,7 +51,9 @@ router.patch('/tickets/:ticketId/reassign', async (req, res, next) => {
     }
 
     // Respect L1/L2/L3 routing rules
-    const eligibleLevels = _eligibleLevels(ticket.priority);
+    const eligibleLevels = getLevelPreferenceOrder(
+      ticket.aiPriority || ticket.predictedPriority || ticket.priority
+    );
     if (!eligibleLevels.includes(agent.level)) {
       return next(
         createError(
@@ -59,9 +63,8 @@ router.patch('/tickets/:ticketId/reassign', async (req, res, next) => {
       );
     }
 
-    // Check capacity (warn but allow admin to override if needed, or enforce. Let's warn/allow or enforce. Let's enforce or just check capacity.)
-    if (agent.active_tickets >= agent.max_capacity) {
-      // Just a warning or strict check? Let's allow admins to force reassign, but update active_tickets properly.
+    if (!getAgentCapacityStatus(agent).eligible) {
+      return next(createError('Selected engineer is at capacity and cannot receive another ticket', 409));
     }
 
     const oldAgentId = ticket.assignedAgent;
@@ -71,32 +74,14 @@ router.patch('/tickets/:ticketId/reassign', async (req, res, next) => {
       return res.json({ success: true, message: 'Ticket already assigned to this agent', data: ticket });
     }
 
-    // Update old agent workload
-    if (oldAgentId) {
-      await SupportAgent.findByIdAndUpdate(oldAgentId, [
-        {
-          $set: {
-            active_tickets: { $max: [0, { $subtract: ['$active_tickets', 1] }] },
-            status: {
-              $cond: {
-                if: { $lte: [{ $subtract: ['$active_tickets', 1] }, 0] },
-                then: 'available',
-                else: '$status',
-              },
-            },
-          },
-        },
-      ]);
+    const capacityAssigned = await tryAssignToEngineer(agent._id, ticket.ticketId);
+    if (!capacityAssigned) {
+      return next(createError('Selected engineer is at capacity and cannot receive another ticket', 409));
     }
 
-    // Update new agent workload
-    await SupportAgent.findByIdAndUpdate(agent._id, {
-      $inc: { active_tickets: 1 },
-      $set: {
-        lastAssignedAt: new Date(),
-        status: agent.active_tickets + 1 >= agent.max_capacity ? 'busy' : 'available',
-      },
-    });
+    if (oldAgentId) {
+      await releaseTicket(oldAgentId);
+    }
 
     // Update ticket
     ticket.assignedAgent = agent._id;
@@ -106,6 +91,28 @@ router.patch('/tickets/:ticketId/reassign', async (req, res, next) => {
     ticket.queuedAt = null;
     ticket.assignmentTimestamp = new Date();
     await ticket.save();
+
+    // Trigger processQueue to handle any unassigned tickets since capacity changed
+    try {
+      const { processQueue } = require('../services/queueManager');
+      processQueue().catch(err => console.error('[Reassign Dequeue Error]', err.message));
+    } catch (e) {
+      console.error(e);
+    }
+
+    // Notify customer about the reassignment (in-app notification)
+    try {
+      const Customer = require('../models/Customer');
+      const customer = await Customer.findById(ticket.customer);
+      if (customer) {
+        const { notifyTicketReassigned } = require('../services/notificationService');
+        notifyTicketReassigned(ticket, customer).catch(err =>
+          console.error('[Admin Reassign] Notification error:', err.message)
+        );
+      }
+    } catch (notifErr) {
+      console.error('[Admin Reassign] Notification error:', notifErr.message);
+    }
 
     // Create Audit Log
     await AuditLog.create({
@@ -150,7 +157,7 @@ router.get('/analytics', async (req, res, next) => {
     const priorityAgg = await Ticket.aggregate([
       { $group: { _id: '$priority', count: { $sum: 1 } } }
     ]);
-    const priority = { Low: 0, Medium: 0, High: 0, Critical: 0 };
+    const priority = { Low: 0, Medium: 0, High: 0 };
     priorityAgg.forEach(item => {
       if (item._id in priority) priority[item._id] = item.count;
     });
@@ -201,7 +208,7 @@ router.get('/daily-summary/report', async (req, res, next) => {
     const total = await Ticket.countDocuments();
     const resolved = await Ticket.countDocuments({ status: 'Resolved' });
     const closed = await Ticket.countDocuments({ status: 'Closed' });
-    const pending = await Ticket.countDocuments({ status: { $in: ['Open', 'Assigned', 'In Progress'] } });
+    const pending = await Ticket.countDocuments({ status: { $in: ['New', 'Assigned', 'In Progress'] } });
     const slaBreaches = await Ticket.countDocuments({ slaBreached: true });
 
     // Count escalations by counting non-empty escalationHistory arrays
@@ -245,7 +252,7 @@ router.post('/daily-summary/trigger', async (req, res, next) => {
     const total = await Ticket.countDocuments();
     const resolved = await Ticket.countDocuments({ status: 'Resolved' });
     const closed = await Ticket.countDocuments({ status: 'Closed' });
-    const pending = await Ticket.countDocuments({ status: { $in: ['Open', 'Assigned', 'In Progress'] } });
+    const pending = await Ticket.countDocuments({ status: { $in: ['New', 'Assigned', 'In Progress'] } });
     const slaBreaches = await Ticket.countDocuments({ slaBreached: true });
 
     const summaryReport = {
@@ -262,6 +269,234 @@ router.post('/daily-summary/trigger', async (req, res, next) => {
       success: true,
       message: 'Daily summary email successfully triggered and logged.',
       data: summaryReport,
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+/**
+ * @route   PATCH /api/admin/engineers/:agentId/status
+ * @desc    Update engineer status; if set to 'offline', reassign all their active tickets.
+ */
+router.patch('/engineers/:agentId/status', async (req, res, next) => {
+  try {
+    const { agentId } = req.params;
+    const { status } = req.body;
+
+    if (!status) return next(createError('status is required', 400));
+
+    const agent = await SupportAgent.findById(agentId);
+    if (!agent) return next(createError('Support agent not found', 404));
+
+    const prevStatus = agent.status;
+    agent.status = status;
+    await agent.save();
+
+    let reassignedCount = 0;
+
+    if (status === 'offline' && prevStatus !== 'offline') {
+      // Find all unresolved tickets assigned to this agent
+      const tickets = await Ticket.find({
+        assignedAgent: agent._id,
+        status: { $nin: ['Resolved', 'Closed'] },
+      });
+
+      const { findAndAssign } = require('../services/assignmentEngine');
+
+      for (const ticket of tickets) {
+        // Release from this offline agent
+        ticket.assignedAgent = null;
+        ticket.status = 'New';
+        ticket.isQueued = true;
+        ticket.queuedAt = new Date();
+        await ticket.save();
+
+        // Re-assign using the assignment engine
+        const result = await findAndAssign(
+          ticket.aiPriority || ticket.predictedPriority || ticket.priority,
+          ticket.ticketId,
+          { category: ticket.aiCategory || ticket.predictedCategory || ticket.category }
+        );
+        if (result) {
+          reassignedCount++;
+        }
+      }
+
+      // Force agent's active workload count to 0 since they went offline
+      agent.active_tickets = 0;
+      await agent.save();
+    } else if (status === 'available' || status === 'busy') {
+      try {
+        const { processQueue } = require('../services/queueManager');
+        processQueue().catch(err => console.error('[Agent Available Dequeue Error]', err.message));
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    res.json({
+      success: true,
+      message: `Status updated to ${status}.${reassignedCount > 0 ? ` Reassigned ${reassignedCount} tickets.` : ''}`,
+      data: agent,
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+/**
+ * @route   POST /api/admin/rebalance
+ * @desc    Rebalance all active tickets among eligible available support agents.
+ */
+router.post('/rebalance', async (req, res, next) => {
+  try {
+    const { findAndAssign } = require('../services/assignmentEngine');
+
+    const tickets = await Ticket.find({
+      status: { $in: ['New', 'Assigned', 'In Progress'] }
+    }).sort({ priority: -1, createdAt: 1 });
+
+    const agents = await SupportAgent.find({ isActive: true });
+    for (const agent of agents) {
+      const actualActiveCount = await Ticket.countDocuments({
+        assignedAgent: agent._id,
+        status: { $nin: ['Resolved', 'Closed'] },
+      });
+      agent.active_tickets = actualActiveCount;
+      agent.status = agent.status === 'offline' ? 'offline' : actualActiveCount >= agent.max_capacity ? 'busy' : 'available';
+      await agent.save();
+    }
+
+    let reassignedCount = 0;
+
+    for (const ticket of tickets) {
+      ticket.assignedAgent = null;
+      ticket.status = 'New';
+      ticket.isQueued = true;
+      ticket.queuedAt = new Date();
+      await ticket.save();
+
+      const result = await findAndAssign(
+        ticket.aiPriority || ticket.predictedPriority || ticket.priority,
+        ticket.ticketId,
+        { category: ticket.aiCategory || ticket.predictedCategory || ticket.category }
+      );
+      if (result) {
+        reassignedCount++;
+      }
+    }
+
+    res.json({
+      success: true,
+      message: `Successfully rebalanced ${reassignedCount} active tickets across support agents.`,
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+/**
+ * @route   GET /api/admin/assignment-status
+ * @desc    Get current health and diagnostics of the assignment engine
+ */
+router.get('/assignment-status', async (req, res, next) => {
+  try {
+    const totalOpenTickets = await Ticket.countDocuments({ status: { $nin: ['Resolved', 'Closed'] } });
+    const assignedTickets = await Ticket.countDocuments({ status: { $nin: ['Resolved', 'Closed'] }, assignedAgent: { $ne: null } });
+    const unassignedTickets = await Ticket.countDocuments({ status: { $nin: ['Resolved', 'Closed'] }, assignedAgent: null });
+
+    const availableEngineers = await SupportAgent.countDocuments({
+      status: { $in: ['available', 'busy'] },
+      isActive: true,
+      $expr: { $lt: ['$active_tickets', '$max_capacity'] }
+    });
+
+    const overloadedEngineers = await SupportAgent.countDocuments({
+      isActive: true,
+      $expr: { $gte: ['$active_tickets', '$max_capacity'] }
+    });
+
+    const { getLastAssignmentTimestamp } = require('../services/assignmentEngine');
+
+    res.json({
+      totalOpenTickets,
+      assignedTickets,
+      unassignedTickets,
+      availableEngineers,
+      overloadedEngineers,
+      lastAssignmentRun: getLastAssignmentTimestamp(),
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+/**
+ * @route   GET /api/admin/assignment-debug
+ * @desc    Get complete diagnostic data for the auto-assignment system
+ */
+router.get('/queue-status', async (req, res, next) => {
+  try {
+    const status = await getQueueStatus();
+    res.json({ success: true, data: status });
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.get('/capacity-check', async (req, res, next) => {
+  try {
+    const engineers = await SupportAgent.find({ isActive: true }).sort({ name: 1 });
+    const capacityView = engineers.map((engineer) => {
+      const capacityStatus = getAgentCapacityStatus(engineer);
+      return {
+        name: engineer.name,
+        activeTickets: engineer.active_tickets,
+        maxCapacity: engineer.max_capacity,
+        availableSlots: capacityStatus.availableSlots,
+        status: capacityStatus.status,
+      };
+    });
+
+    const overloadedEngineers = capacityView.filter((engineer) => engineer.activeTickets >= engineer.maxCapacity);
+
+    res.json({
+      success: true,
+      engineers: capacityView,
+      overloadedEngineers,
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.get('/assignment-debug', async (req, res, next) => {
+  try {
+    const queuedTickets = await Ticket.countDocuments({ isQueued: true });
+    const openUnassignedTickets = await Ticket.countDocuments({
+      status: 'New',
+      $or: [
+        { assignedAgent: null },
+        { assignedEngineer: null }
+      ]
+    });
+
+    const availableEngineers = await SupportAgent.countDocuments({
+      status: 'available',
+      isActive: true,
+      $expr: { $lt: ['$active_tickets', '$max_capacity'] },
+    });
+
+    const { getLastAssignmentTimestamp, getLastAssignedTicketId } = require('../services/assignmentEngine');
+
+    res.json({
+      workerRunning: true,
+      queuedTickets,
+      openUnassignedTickets,
+      lastAssignmentRun: getLastAssignmentTimestamp(),
+      lastAssignedTicket: getLastAssignedTicketId(),
+      availableEngineers,
     });
   } catch (err) {
     next(err);

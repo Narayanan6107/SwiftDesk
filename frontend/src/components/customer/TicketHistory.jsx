@@ -6,7 +6,7 @@ import LoadingSpinner from '../ui/LoadingSpinner';
 
 const STATUS_OPTIONS = ['', 'New', 'Assigned', 'In Progress', 'Resolved', 'Closed'];
 const CATEGORY_OPTIONS = ['', 'Technical', 'Billing', 'General', 'Account', 'Feature Request'];
-const PRIORITY_OPTIONS = ['', 'Low', 'Medium', 'High', 'Critical'];
+const PRIORITY_OPTIONS = ['', 'Low', 'Medium', 'High'];
 
 function formatDate(d) {
   if (!d) return '—';

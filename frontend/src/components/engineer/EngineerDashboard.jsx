@@ -169,7 +169,7 @@ export default function EngineerDashboard() {
   // Compute stats
   const stats = {
     total: tickets.length,
-    open: tickets.filter(t => t.status === 'Open').length,
+    open: tickets.filter(t => t.status === 'New').length,
     inProgress: tickets.filter(t => t.status === 'In Progress').length,
     resolved: tickets.filter(t => t.status === 'Resolved').length,
   };
@@ -351,7 +351,7 @@ export default function EngineerDashboard() {
                             onChange={(e) => setNewStatus(e.target.value)}
                             className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                           >
-                            <option value="Open">Open</option>
+                            <option value="New">New</option>
                             <option value="Assigned">Assigned</option>
                             <option value="In Progress">In Progress</option>
                             <option value="Resolved">Resolved</option>
@@ -430,7 +430,7 @@ export default function EngineerDashboard() {
                     }
                   />
                   <StatCard
-                    label="Open"
+                    label="New"
                     value={stats.open}
                     color="blue"
                     icon={

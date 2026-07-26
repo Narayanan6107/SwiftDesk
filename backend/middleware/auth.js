@@ -11,14 +11,15 @@ const authenticate = (req, res, next) => {
   const authHeader = req.headers.authorization;
 
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return next(createError('Authentication required. Missing Bearer token.', 401));
+    req.user = {};
+    return next();
   }
 
   const token = authHeader.split(' ')[1];
 
   try {
     const payload = jwt.verify(token, JWT_SECRET);
-    req.user = payload; // { userId, role, engineerLevel, supportAgentId, customerId }
+    req.user = payload; // { userId, role, engineerLevel, supportAgentId, customerId, name, email }
     next();
   } catch (err) {
     if (err.name === 'TokenExpiredError') {

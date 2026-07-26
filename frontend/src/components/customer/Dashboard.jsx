@@ -97,7 +97,7 @@ export default function Dashboard({ onNavigate, customerEmail }) {
               }
             />
             <StatCard
-              label="Open"
+              label="New"
               value={stats.open}
               color="blue"
               icon={

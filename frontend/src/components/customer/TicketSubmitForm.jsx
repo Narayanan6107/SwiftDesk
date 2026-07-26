@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTickets } from '../../hooks/useTickets';
 import { useToast } from '../../context/ToastContext';
+import { useAuth } from '../../context/AuthContext';
 import LoadingSpinner from '../ui/LoadingSpinner';
 
 const CATEGORIES = ['Technical', 'Billing', 'General', 'Account', 'Feature Request'];
@@ -8,7 +9,6 @@ const PRIORITIES = [
   { value: 'Low', label: 'Low', desc: 'Non-urgent, general inquiry', color: 'text-slate-600' },
   { value: 'Medium', label: 'Medium', desc: 'Normal issue, timely response needed', color: 'text-sky-600' },
   { value: 'High', label: 'High', desc: 'Significant impact on operations', color: 'text-orange-600' },
-  { value: 'Critical', label: 'Critical', desc: 'Service down, immediate action required', color: 'text-red-600' },
 ];
 
 const INITIAL = {
@@ -16,6 +16,8 @@ const INITIAL = {
   description: '',
   category: '',
   priority: 'Medium',
+  customerName: '',
+  customerEmail: '',
 };
 
 function FieldError({ msg }) {
@@ -31,7 +33,7 @@ function FieldError({ msg }) {
   );
 }
 
-function validate(values) {
+function validate(values, requireCustomerDetails) {
   const errors = {};
   if (!values.subject.trim()) {
     errors.subject = 'Subject is required';
@@ -44,6 +46,18 @@ function validate(values) {
   } else if (values.description.trim().length < 20) {
     errors.description = 'Description must be at least 20 characters';
   }
+
+  if (requireCustomerDetails) {
+    if (!values.customerName.trim()) {
+      errors.customerName = 'Customer name is required';
+    }
+    if (!values.customerEmail.trim()) {
+      errors.customerEmail = 'Customer email is required';
+    } else if (!/^\S+@\S+\.\S+$/.test(values.customerEmail.trim())) {
+      errors.customerEmail = 'Customer email is not a valid email address';
+    }
+  }
+
   return errors;
 }
 
@@ -53,13 +67,27 @@ export default function TicketSubmitForm({ onSuccess }) {
   const [touched, setTouched] = useState({});
   const { submitTicket, submitting } = useTickets({ autoFetch: false });
   const toast = useToast();
+  const { user } = useAuth();
+
+  const authCustomerName = user?.name || user?.fullName || '';
+  const authCustomerEmail = user?.email || '';
+  const requireCustomerDetails = !authCustomerName || !authCustomerEmail;
+
+  useEffect(() => {
+    if (!authCustomerName && !authCustomerEmail) return;
+    setValues((prev) => ({
+      ...prev,
+      customerName: prev.customerName || authCustomerName,
+      customerEmail: prev.customerEmail || authCustomerEmail,
+    }));
+  }, [authCustomerName, authCustomerEmail]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setValues((v) => ({ ...v, [name]: value }));
     if (touched[name]) {
       setErrors((prev) => {
-        const next = validate({ ...values, [name]: value });
+        const next = validate({ ...values, [name]: value }, requireCustomerDetails);
         return { ...prev, [name]: next[name] };
       });
     }
@@ -68,7 +96,7 @@ export default function TicketSubmitForm({ onSuccess }) {
   const handleBlur = (e) => {
     const { name } = e.target;
     setTouched((t) => ({ ...t, [name]: true }));
-    const next = validate(values);
+    const next = validate(values, requireCustomerDetails);
     setErrors((prev) => ({ ...prev, [name]: next[name] }));
   };
 
@@ -76,7 +104,7 @@ export default function TicketSubmitForm({ onSuccess }) {
     e.preventDefault();
     const allTouched = Object.fromEntries(Object.keys(INITIAL).map((k) => [k, true]));
     setTouched(allTouched);
-    const errs = validate(values);
+    const errs = validate(values, requireCustomerDetails);
     setErrors(errs);
     if (Object.keys(errs).some((k) => errs[k])) return;
 
@@ -86,6 +114,10 @@ export default function TicketSubmitForm({ onSuccess }) {
         description: values.description.trim(),
         category: values.category,
         priority: values.priority,
+        customer: {
+          name: (values.customerName || authCustomerName || '').trim(),
+          email: (values.customerEmail || authCustomerEmail || '').trim(),
+        },
       });
       toast.success(`Ticket ${ticket.ticketId} created successfully!`);
       onSuccess(ticket);
@@ -116,7 +148,50 @@ export default function TicketSubmitForm({ onSuccess }) {
 
       <form id="ticket-submit-form" onSubmit={handleSubmit} noValidate>
         <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+          {/** ── Customer details section ───────────────────────────────────── */}
+          {requireCustomerDetails && (
+            <div className="px-6 py-5 space-y-5 border-b border-slate-100">
+              <h3 className="text-sm font-semibold text-slate-600 uppercase tracking-wider">
+                Customer Details
+              </h3>
 
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label htmlFor="customerName" className="block text-sm font-medium text-slate-700 mb-1.5">
+                    Full name <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    id="customerName"
+                    name="customerName"
+                    type="text"
+                    value={values.customerName}
+                    onChange={handleChange}
+                    onBlur={handleBlur}
+                    placeholder="Your full name"
+                    className={inputClass('customerName')}
+                  />
+                  <FieldError msg={touched.customerName && errors.customerName} />
+                </div>
+
+                <div>
+                  <label htmlFor="customerEmail" className="block text-sm font-medium text-slate-700 mb-1.5">
+                    Email <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    id="customerEmail"
+                    name="customerEmail"
+                    type="email"
+                    value={values.customerEmail}
+                    onChange={handleChange}
+                    onBlur={handleBlur}
+                    placeholder="you@example.com"
+                    className={inputClass('customerEmail')}
+                  />
+                  <FieldError msg={touched.customerEmail && errors.customerEmail} />
+                </div>
+              </div>
+            </div>
+          )}
           {/* ── Ticket details section ───────────────────────────────────────── */}
           <div className="px-6 py-5 space-y-5">
             <h3 className="text-sm font-semibold text-slate-600 uppercase tracking-wider">

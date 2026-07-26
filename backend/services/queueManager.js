@@ -15,6 +15,8 @@ const Ticket = require('../models/Ticket');
 const AuditLog = require('../models/AuditLog');
 const { findAndAssign } = require('./assignmentEngine');
 const cfg = require('../config/automation');
+const { getPrioritySortValue, normalizePriority } = require('../config/automation');
+const { logAssignmentFailed, logAssignmentSuccess, logError } = require('./assignmentLogger');
 
 /**
  * Process all currently queued tickets.
@@ -23,20 +25,37 @@ const cfg = require('../config/automation');
  * @returns {Promise<{ processed: number, assigned: number, stillQueued: number }>}
  */
 async function processQueue() {
-  const queuedTickets = await Ticket.find({ isQueued: true, status: 'Open' })
-    .sort({ queuedAt: 1 })  // FIFO
-    .limit(50);              // cap per run to avoid blocking the event loop
+  const queuedTickets = await Ticket.find({ isQueued: true, status: 'New' });
 
   if (!queuedTickets.length) {
     return { processed: 0, assigned: 0, stillQueued: 0 };
   }
 
-  let assigned = 0;
+  // ── Primary pass: use priority-aware drain (L3→High first, L2→Medium first) ──
+  // drainQueueForAllAvailableAgents iterates available agents least-loaded first,
+  // and for each agent assigns the highest-priority ticket they can handle.
+  const { drainQueueForAllAvailableAgents } = require('./queueDrainer');
+  const primaryAssigned = await drainQueueForAllAvailableAgents();
+
+  // ── Secondary pass: try direct findAndAssign for any remaining queued tickets ──
+  const remaining = await Ticket.find({ isQueued: true, status: 'New' });
+  remaining.forEach((ticket) => {
+    ticket.priority = normalizePriority(ticket.aiPriority || ticket.priority);
+  });
+  remaining.sort(getPrioritySortValue);
+
+  const ticketsToProcess = remaining.slice(0, 50);
+
+  let assigned = primaryAssigned;
   let stillQueued = 0;
 
-  for (const ticket of queuedTickets) {
+  for (const ticket of ticketsToProcess) {
     try {
-      const result = await findAndAssign(ticket.aiPriority || ticket.priority);
+      const result = await findAndAssign(
+        ticket.aiPriority || ticket.predictedPriority || ticket.priority,
+        ticket.ticketId,
+        { category: ticket.aiCategory || ticket.predictedCategory || ticket.category }
+      );
 
       if (result) {
         // ── Dequeue & assign ───────────────────────────────────────────────
@@ -44,8 +63,13 @@ async function processQueue() {
         ticket.queuedAt = null;
         ticket.status = 'Assigned';
         ticket.assignedAgent = result.agent._id;
+        ticket.assignedEngineer = result.agent._id;
         ticket.assignedLevel = result.assignedLevel;
+        ticket.requiredLevel = result.requiredLevel || ticket.requiredLevel;
+        ticket.assignmentReason = result.assignmentReason;
         ticket.assignmentTimestamp = new Date();
+        ticket.isQueued = false;
+        ticket.queuedAt = null;
         await ticket.save();
 
         // Trigger assignment notifications
@@ -75,17 +99,16 @@ async function processQueue() {
         });
 
         assigned++;
-        console.log(`[QueueManager] Assigned queued ticket ${ticket.ticketId} → ${result.agent.name} (${result.assignedLevel})`);
       } else {
         stillQueued++;
       }
     } catch (err) {
-      console.error(`[QueueManager] Error processing ticket ${ticket.ticketId}:`, err.message);
+      logAssignmentFailed(ticket.ticketId, err.message);
       stillQueued++;
     }
   }
 
-  return { processed: queuedTickets.length, assigned, stillQueued };
+  return { processed: remaining.length, assigned, stillQueued };
 }
 
 /**
@@ -97,13 +120,20 @@ async function processQueue() {
  * @returns {Promise<void>}
  */
 async function enqueue(ticket, priority) {
-  const slaHours = cfg.SLA_HOURS[priority] ?? 24;
+  const normalizedPriority = normalizePriority(priority);
+  const slaHours = cfg.SLA_HOURS[normalizedPriority] ?? 24;
   const now = new Date();
+
+  if (!ticket.requiredLevel) {
+    ticket.requiredLevel = cfg.getRequiredSupportLevel(
+      ticket.aiPriority || ticket.predictedPriority || priority
+    );
+  }
 
   ticket.isQueued = true;
   ticket.queuedAt = now;
   ticket.slaDeadline = new Date(now.getTime() + slaHours * 60 * 60 * 1000);
-  ticket.status = 'Open';
+  ticket.status = 'New';
 
   await ticket.save();
 
@@ -114,12 +144,40 @@ async function enqueue(ticket, priority) {
     details: {
       reason: 'No eligible agent available at time of submission',
       slaDeadline: ticket.slaDeadline,
-      priority,
+      priority: normalizedPriority,
     },
     performedBy: 'assignment_engine',
   });
 
-  console.log(`[QueueManager] Ticket ${ticket.ticketId} queued. SLA deadline: ${ticket.slaDeadline.toISOString()}`);
+  if (process.env.DEBUG_ASSIGNMENT === 'true') {
+    console.log(`[DEBUG] Queue ticket ${ticket.ticketId} queued. SLA deadline: ${ticket.slaDeadline.toISOString()}`);
+  }
 }
 
-module.exports = { processQueue, enqueue };
+async function getQueueStatus() {
+  const queuedTickets = await Ticket.find({ isQueued: true, status: 'New' }).sort(getPrioritySortValue);
+  const byPriority = { High: 0, Medium: 0, Low: 0 };
+  queuedTickets.forEach((ticket) => {
+    const normalized = normalizePriority(ticket.aiPriority || ticket.priority);
+    byPriority[normalized] = (byPriority[normalized] || 0) + 1;
+  });
+
+  return {
+    totalQueued: queuedTickets.length,
+    highPriorityCount: byPriority.High,
+    mediumPriorityCount: byPriority.Medium,
+    lowPriorityCount: byPriority.Low,
+    oldestWaitingTicket: queuedTickets[0] ? {
+      ticketId: queuedTickets[0].ticketId,
+      priority: normalizePriority(queuedTickets[0].aiPriority || queuedTickets[0].priority),
+      createdAt: queuedTickets[0].createdAt,
+    } : null,
+    nextAssignment: queuedTickets[0] ? {
+      ticketId: queuedTickets[0].ticketId,
+      priority: normalizePriority(queuedTickets[0].aiPriority || queuedTickets[0].priority),
+      createdAt: queuedTickets[0].createdAt,
+    } : null,
+  };
+}
+
+module.exports = { processQueue, enqueue, getQueueStatus };

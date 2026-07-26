@@ -6,12 +6,14 @@ const Ticket = require('../models/Ticket');
 const Customer = require('../models/Customer');
 const AuditLog = require('../models/AuditLog');
 const { createError } = require('../middleware/errorHandler');
-const { classify } = require('../services/mlClassifier');
-const { validate: llmValidate } = require('../services/llmValidator');
+const { classifyTicket } = require('../services/geminiService');
 const { findAndAssign } = require('../services/assignmentEngine');
 const { enqueue } = require('../services/queueManager');
 const { authenticate } = require('../middleware/auth');
 const cfg = require('../config/automation');
+const { getRequiredSupportLevel, getSlaPriority } = cfg;
+const { logAssignmentSuccess, logAssignmentFailed, logError } = require('../services/assignmentLogger');
+const { mergeCustomerDetails, validateCustomerDetails } = require('../services/customerDetails');
 
 // ── Ticket ID generator ───────────────────────────────────────────────────────
 
@@ -49,21 +51,62 @@ router.post('/', authenticate, async (req, res, next) => {
       return next(createError('subject is required', 400));
     if (!description?.trim())
       return next(createError('description is required', 400));
-    if (!customerPayload?.name?.trim() || !customerPayload?.email?.trim())
-      return next(createError('customer.name and customer.email are required', 400));
-    if (!/^\S+@\S+\.\S+$/.test(customerPayload.email))
-      return next(createError('customer.email is not a valid email address', 400));
 
     // ── 2. Identify Customer ────────────────────────────────────────────────
-    // customer_id now comes from the authenticated JWT instead of the request body
-    const customerId = req.user.customerId;
-    if (!customerId) return next(createError('User is not linked to a customer account', 400));
-    
-    let customer = await Customer.findById(customerId);
-    if (!customer) return next(createError('Customer not found', 404));
+    const jwtCustomer = {
+      name: req.user?.name || req.user?.fullName || '',
+      email: req.user?.email || '',
+    };
 
-    // ── 3. Create base Ticket document ────────────────────────────────────
-    // We generate ticketId here; we guarantee uniqueness with a retry loop.
+    const mergedCustomer = mergeCustomerDetails(jwtCustomer, customerPayload || {});
+    const customerValidation = validateCustomerDetails(mergedCustomer);
+
+    if (!customerValidation.valid) {
+      const firstError = Object.values(customerValidation.errors)[0];
+      return next(createError(firstError, 400));
+    }
+
+    const customerId = req.user?.customerId;
+    let customer = customerId ? await Customer.findById(customerId) : null;
+
+    if (!customer) {
+      customer = await Customer.findOne({ email: customerValidation.value.email.toLowerCase() });
+    }
+
+    if (!customer) {
+      customer = await Customer.create({
+        customer_id: `CUS-${Date.now().toString(36).toUpperCase()}`,
+        name: customerValidation.value.name,
+        email: customerValidation.value.email,
+        password: 'guest-ticket',
+      });
+    } else {
+      const shouldUpdate = customer.name !== customerValidation.value.name || customer.email !== customerValidation.value.email;
+      if (shouldUpdate) {
+        customer.name = customerValidation.value.name;
+        customer.email = customerValidation.value.email;
+        await customer.save();
+      }
+    }
+
+    // ── 3. Gemini Classification ──────────────────────────────────────────────
+    console.log(`\n[Customer Input]\nCategory: ${userCategory || 'None'}\nPriority: ${userPriority || 'None'}\n`);
+    
+    const classification = await classifyTicket({ 
+      subject, 
+      description, 
+      userCategory, 
+      userPriority 
+    });
+
+    const finalCategory = classification.category;
+    const finalPriority = classification.priority;
+    const validationSource = classification.validationSource;
+    const confidence = classification.confidence;
+
+    console.log(`[Gemini Prediction]\nCategory: ${finalCategory}\nPriority: ${finalPriority}\n`);
+
+    // ── 4. Create base Ticket document ────────────────────────────────────
     let ticketId;
     let isUnique = false;
     for (let attempt = 0; attempt < 5 && !isUnique; attempt++) {
@@ -78,101 +121,60 @@ router.post('/', authenticate, async (req, res, next) => {
       customer: customer._id,
       subject: subject.trim(),
       description: description.trim(),
-      // Use user-provided category/priority as fallback; AI will override below
-      category: userCategory || 'General',
-      priority: userPriority || 'Medium',
+      category: finalCategory,
+      priority: finalPriority,
       channel: channel || 'web',
+      status: 'New',
       metadata: {
         app_version: metadata?.app_version || null,
         platform: metadata?.platform || null,
       },
       tags: Array.isArray(tags) ? tags : [],
+      predictedCategory: finalCategory,
+      predictedPriority: finalPriority,
+      aiCategory: finalCategory,
+      aiPriority: finalPriority,
+      validationSource: validationSource,
+      aiConfidence: confidence
+    });
+    
+    ticket.requiredLevel = getRequiredSupportLevel(ticket.priority);
+    const slaPriority = getSlaPriority(ticket.priority);
+    ticket.priority = slaPriority;
+    
+    // Save the finalized ticket to MongoDB
+    await ticket.save();
+
+    console.log(`[Saved Ticket]\nCategory: ${ticket.category}\nPriority: ${ticket.priority}\n`);
+
+    await AuditLog.create({
+      ticket: ticket._id,
+      ticketId: ticket.ticketId,
+      eventType: 'ticket_created',
+      details: { subject, category: ticket.category, priority: ticket.priority },
+      performedBy: 'system',
     });
 
-    // ── 4. ML Classification ──────────────────────────────────────────────
-    const mlResult = await classify(subject, description);
+    // ── 5. Assignment Engine ──────────────────────────────────────────────
+    console.log(`[Assignment]\nUsing AI prediction`);
 
-    ticket.mlPrediction = {
-      category: mlResult.category,
-      priority: mlResult.priority,
-      confidence: mlResult.confidence,
-    };
-    ticket.aiConfidence = mlResult.confidence;
-    ticket.sentiment = mlResult.sentiment || null;
-
-    let resolvedCategory, resolvedPriority, validationSource, llmExplanation;
-
-    if (mlResult.confidence >= cfg.ML_CONFIDENCE_THRESHOLD) {
-      // ── 5a. Trust ML prediction ────────────────────────────────────────
-      resolvedCategory = mlResult.category;
-      resolvedPriority = mlResult.priority;
-      validationSource = 'ML';
-      llmExplanation = null;
-
-      await AuditLog.create({
-        ticket: ticket._id,
-        ticketId: ticket.ticketId,
-        eventType: 'ml_classified',
-        details: {
-          category: resolvedCategory,
-          priority: resolvedPriority,
-          confidence: mlResult.confidence,
-          threshold: cfg.ML_CONFIDENCE_THRESHOLD,
-        },
-        performedBy: 'ml_classifier',
-      });
-
-      console.log(
-        `[ML] Ticket ${ticketId} classified — ${resolvedCategory} / ${resolvedPriority} (confidence: ${(mlResult.confidence * 100).toFixed(1)}%)`
-      );
-    } else {
-      // ── 5b. Low confidence → invoke LLM ───────────────────────────────
-      console.log(
-        `[ML] Low confidence (${(mlResult.confidence * 100).toFixed(1)}%) for ${ticketId} — invoking LLM`
-      );
-      const llmResult = await llmValidate(subject, description, mlResult);
-
-      resolvedCategory = llmResult.category;
-      resolvedPriority = llmResult.priority;
-      validationSource = 'LLM';
-      llmExplanation = llmResult.explanation;
-
-      await AuditLog.create({
-        ticket: ticket._id,
-        ticketId: ticket.ticketId,
-        eventType: 'llm_validated',
-        details: {
-          category: resolvedCategory,
-          priority: resolvedPriority,
-          explanation: llmExplanation,
-          mlConfidence: mlResult.confidence,
-          usedLLMApi: llmResult.usedLLM,
-        },
-        performedBy: 'llm_validator',
-      });
-    }
-
-    // Apply resolved classification back to ticket
-    ticket.category = resolvedCategory;
-    ticket.priority = resolvedPriority;
-    ticket.aiCategory = resolvedCategory;
-    ticket.aiPriority = resolvedPriority;
-    ticket.validationSource = validationSource;
-    ticket.llmExplanation = llmExplanation;
-
-    // ── 6. Assignment Engine ──────────────────────────────────────────────
-    const assignment = await findAndAssign(resolvedPriority);
+    const assignment = await findAndAssign(finalPriority, ticketId, {
+      category: finalCategory,
+    });
     const now = new Date();
 
     if (assignment) {
       // ── Assigned ───────────────────────────────────────────────────────
       ticket.assignedAgent = assignment.agent._id;
+      ticket.assignedEngineer = assignment.agent._id;
       ticket.assignedLevel = assignment.assignedLevel;
+      ticket.requiredLevel = assignment.requiredLevel || ticket.requiredLevel;
+      ticket.assignmentReason = assignment.assignmentReason;
       ticket.assignmentTimestamp = now;
       ticket.status = 'Assigned';
 
       // Set SLA deadline from assignment time
-      const slaHours = cfg.SLA_HOURS[resolvedPriority] ?? 24;
+      const slaHours = cfg.SLA_HOURS[slaPriority] ?? 24;
       ticket.slaDeadline = new Date(now.getTime() + slaHours * 60 * 60 * 1000);
 
       await ticket.save();
@@ -191,28 +193,19 @@ router.post('/', authenticate, async (req, res, next) => {
           agentId: assignment.agent.agent_id,
           agentName: assignment.agent.name,
           assignedLevel: assignment.assignedLevel,
-          priority: resolvedPriority,
+          requiredLevel: assignment.requiredLevel,
+          assignmentReason: assignment.assignmentReason,
+          priority: ticket.priority,
         },
         performedBy: 'assignment_engine',
       });
 
-      await AuditLog.create({
-        ticket: ticket._id,
-        ticketId: ticket.ticketId,
-        eventType: 'ticket_created',
-        details: { subject, category: resolvedCategory, priority: resolvedPriority },
-        performedBy: 'system',
-      });
-
-      console.log(
-        `[Assign] Ticket ${ticketId} → ${assignment.agent.name} (${assignment.assignedLevel})`
-      );
 
       // Trigger notifications asynchronously
       try {
         const { notifyTicketCreated, notifyTicketAssigned } = require('../services/notificationService');
         notifyTicketCreated(ticket, customer).catch(err => console.error('Failed to send creation email:', err.message));
-        notifyTicketAssigned(ticket, customer, assignment.agent).catch(err => console.error('Failed to send assignment email:', err.message));
+        notifyTicketAssigned(ticket, customer, assignment.agent).catch(err => logError(`Failed to send assignment email: ${err.message}`));
       } catch (notifErr) {
         console.error('Notification error:', notifErr.message);
       }
@@ -220,16 +213,17 @@ router.post('/', authenticate, async (req, res, next) => {
       return res.status(201).json({
         status: 'accepted',
         ticket_id: ticketId,
-        resolved_priority: resolvedPriority,
-        resolved_category: resolvedCategory,
+        resolved_priority: finalPriority,
+        resolved_category: finalCategory,
         assigned_level: assignment.assignedLevel,
         assigned_agent_id: assignment.agent.agent_id,
         validation_source: validationSource,
-        confidence_score: mlResult.confidence,
+        confidence_score: confidence,
         message: 'Ticket received and assigned successfully.',
       });
     } else {
       // ── No agent available — queue ─────────────────────────────────────
+      ticket.requiredLevel = getRequiredSupportLevel(finalPriority);
       await ticket.save(); // save first so we have _id for audit log
 
       await Customer.findByIdAndUpdate(customer._id, {
@@ -237,17 +231,9 @@ router.post('/', authenticate, async (req, res, next) => {
         $set: { lastTicketAt: now },
       });
 
-      await enqueue(ticket, resolvedPriority); // sets isQueued, queuedAt, slaDeadline
+      await enqueue(ticket, slaPriority); // sets isQueued, queuedAt, slaDeadline
 
-      await AuditLog.create({
-        ticket: ticket._id,
-        ticketId: ticket.ticketId,
-        eventType: 'ticket_created',
-        details: { subject, category: resolvedCategory, priority: resolvedPriority },
-        performedBy: 'system',
-      });
-
-      console.log(`[Assign] Ticket ${ticketId} queued (no eligible agent available)`);
+      logAssignmentFailed(ticketId, 'No eligible agent available');
 
       // Trigger creation notification asynchronously
       try {
@@ -260,12 +246,12 @@ router.post('/', authenticate, async (req, res, next) => {
       return res.status(202).json({
         status: 'accepted',
         ticket_id: ticketId,
-        resolved_priority: resolvedPriority,
-        resolved_category: resolvedCategory,
+        resolved_priority: finalPriority,
+        resolved_category: finalCategory,
         assigned_level: null,
         assigned_agent_id: null,
         validation_source: validationSource,
-        confidence_score: mlResult.confidence,
+        confidence_score: confidence,
         message: 'Ticket received and queued. Will be assigned when an agent becomes available.',
       });
     }
@@ -378,28 +364,51 @@ router.patch('/:id/status', authenticate, async (req, res, next) => {
     const { status, by = 'agent' } = req.body;
     if (!status) return next(createError('status is required', 400));
 
-    const allowed = ['Open', 'Assigned', 'In Progress', 'Resolved', 'Closed'];
+    const allowed = ['New', 'Assigned', 'In Progress', 'Resolved', 'Closed'];
     if (!allowed.includes(status)) return next(createError(`status must be one of: ${allowed.join(', ')}`, 400));
 
     const ticket = await Ticket.findOne({ ticketId: req.params.id });
     if (!ticket) return next(createError('Ticket not found', 404));
 
     const prevStatus = ticket.status;
+    if (prevStatus === status) {
+      return res.json({ success: true, message: `Status is already "${status}"`, data: ticket });
+    }
+
     ticket.status = status;
     if (status === 'Resolved') ticket.resolvedAt = new Date();
     if (status === 'Closed') ticket.closedAt = new Date();
     await ticket.save();
 
+    // Decrement active_tickets when a ticket is Resolved or Closed
+    const isResolvedOrClosed = ['Resolved', 'Closed'].includes(status);
+    const wasResolvedOrClosed = ['Resolved', 'Closed'].includes(prevStatus);
+
+    if (isResolvedOrClosed && !wasResolvedOrClosed && ticket.assignedAgent) {
+      try {
+        const { releaseTicket } = require('../services/assignmentEngine');
+        await releaseTicket(ticket.assignedAgent);
+
+        // After capacity is freed, immediately drain the queue for this specific agent.
+        // This ensures L3 engineers pick up High-priority queued tickets first,
+        // L2 engineers pick up Medium tickets first, and L1 picks up Low tickets.
+        const { drainQueueForAgent } = require('../services/queueDrainer');
+        drainQueueForAgent(ticket.assignedAgent).catch(err =>
+          console.error('[QueueDrain Error]', err.message)
+        );
+      } catch (releaseErr) {
+        console.error('[Capacity Free Error]', releaseErr.message);
+      }
+    }
+
     // Trigger status change notifications asynchronously
     try {
       const customer = await Customer.findById(ticket.customer);
       if (customer) {
-        const { notifyTicketResolved, notifyTicketClosed } = require('../services/notificationService');
-        if (status === 'Resolved') {
-          notifyTicketResolved(ticket, customer).catch(err => console.error('Failed to send resolution email:', err.message));
-        } else if (status === 'Closed') {
-          notifyTicketClosed(ticket, customer).catch(err => console.error('Failed to send closure email:', err.message));
-        }
+        const { notifyStatusChanged } = require('../services/notificationService');
+        notifyStatusChanged(ticket, customer, prevStatus, status).catch(err =>
+          console.error('Failed to create status notification:', err.message)
+        );
       }
     } catch (notifErr) {
       console.error('Status notification error:', notifErr.message);

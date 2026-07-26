@@ -165,3 +165,35 @@ export async function triggerDailySummaryEmail() {
     method: 'POST',
   });
 }
+
+// ── Notification API ──────────────────────────────────────────────────────────
+
+/**
+ * Get the 10 most recent in-app notifications for the logged-in customer.
+ */
+export async function getNotifications() {
+  return request('/notifications');
+}
+
+/**
+ * Get the count of unread notifications for the logged-in customer.
+ */
+export async function getUnreadCount() {
+  return request('/notifications/unread-count');
+}
+
+/**
+ * Mark a single notification as read by its MongoDB _id.
+ * @param {string} id - Notification _id
+ */
+export async function markNotificationRead(id) {
+  return request(`/notifications/${id}/read`, { method: 'PATCH' });
+}
+
+/**
+ * Mark ALL notifications as read for the logged-in customer.
+ */
+export async function markAllNotificationsRead() {
+  return request('/notifications/read-all', { method: 'PATCH' });
+}
+

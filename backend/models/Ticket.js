@@ -93,8 +93,8 @@ const TicketSchema = new mongoose.Schema(
     status: {
       type: String,
       required: true,
-      enum: ['Open', 'Assigned', 'In Progress', 'Resolved', 'Closed'],
-      default: 'Open',
+      enum: ['New', 'Assigned', 'In Progress', 'Resolved', 'Closed'],
+      default: 'New',
     },
     resolvedAt: { type: Date, default: null },
     closedAt: { type: Date, default: null },
@@ -103,7 +103,7 @@ const TicketSchema = new mongoose.Schema(
     /** Whether the final category/priority came from ML or LLM. */
     validationSource: {
       type: String,
-      enum: ['ML', 'LLM', null],
+      enum: ['ML', 'LLM', 'Gemini', null],
       default: null,
     },
     /** Raw ML model output. */
@@ -122,6 +122,21 @@ const TicketSchema = new mongoose.Schema(
       enum: ['Low', 'Medium', 'High', 'Critical', null],
       default: null,
     },
+    /** ML-predicted priority before assignment (may include Critical). */
+    predictedPriority: {
+      type: String,
+      enum: ['Low', 'Medium', 'High', 'Critical', null],
+      default: null,
+    },
+    /** ML-predicted category used for skill matching. */
+    predictedCategory: { type: String, trim: true, default: null },
+    /** Minimum engineer tier required for this ticket (preserved when queued). */
+    requiredLevel: {
+      type: String,
+      enum: ['L1', 'L2', 'L3', null],
+      default: null,
+    },
+    assignmentReason: { type: String, trim: true, default: null },
     aiConfidence: { type: Number, min: 0, max: 1, default: null },
     aiSummary: { type: String, trim: true, default: null },
     sentiment: {
@@ -136,7 +151,7 @@ const TicketSchema = new mongoose.Schema(
      */
     finalCategory: {
       type: String,
-      enum: ['Technical', 'Billing', 'General', 'Account', 'Feature Request', null],
+      enum: ['Technical', 'Billing', 'General', 'Account', 'Feature Request', 'Delivery', 'Other', null],
       default: null,
     },
     finalPriority: {
@@ -147,6 +162,11 @@ const TicketSchema = new mongoose.Schema(
 
     // ── Assignment ────────────────────────────────────────────────────────
     assignedAgent: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'SupportAgent',
+      default: null,
+    },
+    assignedEngineer: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'SupportAgent',
       default: null,

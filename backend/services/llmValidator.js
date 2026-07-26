@@ -24,12 +24,11 @@ Your task is to classify the incoming support ticket and return a JSON object.
 
 Rules:
 - category must be one of: Technical, Billing, General, Account, Feature Request
-- priority must be one of: Low, Medium, High, Critical
+- priority must be one of: Low, Medium, High
 - explanation must be 1-2 sentences explaining your reasoning
 - Return ONLY valid JSON — no markdown, no extra text.
 
 Priority guidelines:
-  Critical → system outage, data loss, complete blocker for many users
   High     → significant impact, many users affected, time-sensitive
   Medium   → moderate impact, workaround available
   Low      → cosmetic, nice-to-have, affects one user, not urgent`;
@@ -68,7 +67,7 @@ function _ruleBasedFallback(subject, description, mlResult) {
 
   // Override ML priority only if strong signal exists
   let priority = mlResult.priority;
-  if (/\b(urgent|critical|emergency|outage|production down|data loss)\b/.test(text)) priority = 'Critical';
+  if (/\b(urgent|critical|emergency|outage|production down|data loss)\b/.test(text)) priority = 'High';
   else if (/\b(important|many users|blocking|asap)\b/.test(text)) priority = 'High';
 
   return {
@@ -92,7 +91,7 @@ function _parseLLMResponse(content) {
     const parsed = JSON.parse(clean);
 
     const validCategories = ['Technical', 'Billing', 'General', 'Account', 'Feature Request'];
-    const validPriorities = ['Low', 'Medium', 'High', 'Critical'];
+    const validPriorities = ['Low', 'Medium', 'High'];
 
     if (!validCategories.includes(parsed.category)) return null;
     if (!validPriorities.includes(parsed.priority)) return null;

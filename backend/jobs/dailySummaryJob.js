@@ -12,7 +12,7 @@ async function generateAndSendDailySummary() {
 
   try {
     const total = await Ticket.countDocuments();
-    const openCount = await Ticket.countDocuments({ status: 'Open' });
+    const openCount = await Ticket.countDocuments({ status: 'New' });
     const assignedCount = await Ticket.countDocuments({ status: 'Assigned' });
     const inProgressCount = await Ticket.countDocuments({ status: 'In Progress' });
     const resolvedCount = await Ticket.countDocuments({ status: 'Resolved' });
@@ -49,9 +49,9 @@ async function generateAndSendDailySummary() {
 
     // Top pending tickets (e.g. oldest 5 pending tickets or by priority)
     const topPending = await Ticket.find({
-      status: { $in: ['Open', 'Assigned', 'In Progress'] }
+      status: { $in: ['New', 'Assigned', 'In Progress'] }
     })
-    .sort({ priority: -1, createdAt: 1 }) // priority desc (Critical, High...), then oldest first
+    .sort({ priority: -1, createdAt: 1 }) // priority desc (High, Medium, Low), then oldest first
     .limit(5)
     .populate('customer', 'name');
 
